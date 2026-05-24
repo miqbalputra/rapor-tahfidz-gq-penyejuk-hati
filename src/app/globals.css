@@ -1,0 +1,333 @@
+@import "tailwindcss";
+
+/* Dark mode pakai class strategy: <html class="dark"> akan mengaktifkan tema gelap.
+   Tailwind v4 deteksi otomatis selama dark variant dipakai di komponen.
+   Untuk variabel CSS, kita override di selector .dark agar semua komponen yang
+   pakai var(--*) ikut beradaptasi tanpa perlu ubah class di tiap komponen. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+:root {
+  --background: #f7f6f2;
+  --foreground: #1e2520;
+  --muted: #68736c;
+  --line: #d8ded5;
+  --primary: #1f7a5c;
+  --primary-strong: #155f47;
+  --surface: #ffffff;
+  --surface-soft: #eef4f0;
+  --warning: #a56315;
+  --danger: #b42318;
+}
+
+.dark {
+  --background: #0b1311;
+  --foreground: #e8efea;
+  --muted: #9ba89e;
+  --line: #2e3a36;
+  --primary: #34b88c;
+  --primary-strong: #4ccf9f;
+  --surface: #161f1c;
+  --surface-soft: #1f2c28;
+  --warning: #fbbf24;
+  --danger: #f87171;
+}
+
+.dark img {
+  /* Sedikit redam kecerahan gambar di dark mode agar mata lebih nyaman. */
+  filter: brightness(0.95);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  overscroll-behavior-y: contain;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .report-page {
+    padding: 8mm 6mm;
+    font-size: 10px;
+  }
+}
+
+.report-page {
+  width: min(100%, 210mm);
+  margin: 0 auto;
+  padding: 13mm 13mm 11mm;
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  font-family: "Times New Roman", Times, serif;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.report-header {
+  text-align: center;
+}
+
+.report-header h2 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.report-header h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 2px 0 0;
+}
+
+.report-header p {
+  margin: 2px 0;
+}
+
+.report-identity {
+  display: grid;
+  grid-template-columns: 1.4fr 0.6fr;
+  gap: 3px 20px;
+  margin: 12px 0 8px;
+  font-size: 11px;
+}
+
+.report-section-title {
+  margin: 8px 0 3px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 10px;
+}
+
+.report-table th,
+.report-table td {
+  border: 1px solid #000;
+  padding: 2px 4px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.report-table th:nth-child(1),
+.report-table td:nth-child(1) {
+  width: 8%;
+}
+
+.report-table th:nth-child(2),
+.report-table td:nth-child(2) {
+  width: 34%;
+}
+
+.report-note {
+  min-height: 52px;
+  border: 1px solid #000;
+  padding: 5px 7px;
+  font-size: 10.5px;
+}
+
+.report-note p,
+.report-footer-info p {
+  margin: 1px 0;
+}
+
+.report-footer-info {
+  margin-top: 7px;
+  font-size: 10px;
+}
+
+.report-signatures {
+  margin-top: 8px;
+}
+
+.report-date {
+  text-align: right;
+  margin: 0 0 6px;
+}
+
+.signature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  text-align: center;
+}
+
+.signature-grid p {
+  min-height: 42px;
+  margin: 0 0 8px;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 8mm;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .report-page {
+    width: 100%;
+    min-height: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .report-page + .report-page {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  /* Khusus halaman panduan: pastikan section tidak terpotong di tengah,
+     sembunyikan animasi shimmer/pulse yang tidak relevan saat dicetak. */
+  section[id] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  details {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  details > summary {
+    list-style: none;
+  }
+
+  /* Buka semua details otomatis saat cetak agar isi FAQ terlihat. */
+  details {
+    /* override: paksa terbuka */
+  }
+  details > *:not(summary) {
+    display: block !important;
+  }
+}
+
+
+/* ============================================================
+   Preview DOCX rapor (docx-preview library)
+   Tampilkan halaman seperti kertas A4 dengan shadow dan center.
+   ============================================================ */
+
+.docx-preview-wrapper {
+  width: 100%;
+}
+
+.docx-preview-host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  background: var(--background);
+  border-radius: 8px;
+}
+
+/* Tiap halaman .docx-wrapper > section.docx adalah satu A4 page */
+.docx-preview-host .docx-wrapper {
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.docx-preview-host .docx-wrapper > section.docx {
+  background: #ffffff !important;
+  color: #000000 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--line);
+  margin: 0 !important;
+  /* docx-preview menghasilkan width sesuai dimensi DOCX asli;
+     biarkan saja agar layout tabel terjaga akurat. */
+}
+
+/* Dark mode: paper tetap putih (sesuai realitas Word), hanya background sekitar yang gelap. */
+.dark .docx-preview-host .docx-wrapper > section.docx {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+/* Mobile: kompresi ke fit width supaya halaman A4 tidak overflow horizontal.
+   docx-preview render dengan width fixed ~21cm (793px), kita scale ke container. */
+@media (max-width: 900px) {
+  .docx-preview-host {
+    padding: 8px 0;
+    overflow-x: auto;
+  }
+  .docx-preview-host .docx-wrapper {
+    /* Scale container; tetap bisa scroll horizontal kalau perlu */
+    transform-origin: top left;
+  }
+}
+
+/* Saat dicetak via window.print(), tampilkan halaman tanpa shadow/margin browser */
+@media print {
+  .docx-preview-host {
+    padding: 0;
+    background: #ffffff;
+  }
+  .docx-preview-host .docx-wrapper {
+    gap: 0;
+  }
+  .docx-preview-host .docx-wrapper > section.docx {
+    box-shadow: none !important;
+    border: 0 !important;
+    margin: 0 !important;
+    page-break-after: always;
+  }
+  .docx-preview-host .docx-wrapper > section.docx:last-child {
+    page-break-after: auto;
+  }
+}
