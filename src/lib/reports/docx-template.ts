@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import JSZip from "jszip";
 import { DOMParser, XMLSerializer } from "@xmldom/xmldom";
 import type { Document as XmlDocument, Element as XmlElement, Node as XmlNode } from "@xmldom/xmldom";
@@ -57,21 +58,70 @@ const TEMPLATE_FILES: Record<29 | 30, string> = {
 
 async function loadTemplateBuffer(juz: 29 | 30): Promise<Buffer> {
   const fileName = TEMPLATE_FILES[juz];
-  const candidates = [
-    path.join(/* turbopackIgnore: true */ process.cwd(), "src", "lib", "reports", "templates", fileName),
-    path.join(/* turbopackIgnore: true */ process.cwd(), ".next", "server", "src", "lib", "reports", "templates", fileName),
-    path.join(/* turbopackIgnore: true */ process.cwd(), "Bahan", juz === 29 ? "4. Rapor Juz 29.docx" : "5. Rapor Juz 30.docx"),
-  ];
 
+  // Resolve path template berdasarkan __dirname dari module ini (lebih reliable
+  // di Vercel daripada process.cwd() yang bisa berbeda antara dev dan production).
+  // Module ini ada di src/lib/reports/docx-template.ts, jadi templates dir = ./templates relatif terhadap module ini.
+  let moduleDir: string | null = null;
+  try {
+    moduleDir = path.dirname(fileURLToPath(import.meta.url));
+  } catch {
+    // Fallback kalau import.meta.url tidak available (mis. di test env).
+  }
+
+  const candidates: string[] = [];
+
+  // Lokasi 1: relatif terhadap module ini (paling reliable saat di-bundle Next.js)
+  if (moduleDir) {
+    candidates.push(path.join(moduleDir, "templates", fileName));
+    candidates.push(path.join(moduleDir, "..", "..", "..", "..", "src", "lib", "reports", "templates", fileName));
+    // Production Next.js: server output bisa di .next/server/app, .next/server/pages, dll
+    candidates.push(path.join(moduleDir, "..", "..", "..", "src", "lib", "reports", "templates", fileName));
+  }
+
+  // Lokasi 2: relatif terhadap process.cwd() — beberapa lokasi standar di Vercel
+  candidates.push(path.join(process.cwd(), "src", "lib", "reports", "templates", fileName));
+  candidates.push(path.join(process.cwd(), "public", "templates", fileName));
+  candidates.push(path.join(process.cwd(), ".next", "server", "src", "lib", "reports", "templates", fileName));
+  candidates.push(path.join(process.cwd(), ".next", "standalone", "src", "lib", "reports", "templates", fileName));
+  // Fallback ke folder Bahan untuk dev lama
+  candidates.push(path.join(process.cwd(), "Bahan", juz === 29 ? "4. Rapor Juz 29.docx" : "5. Rapor Juz 30.docx"));
+
+  const tried: string[] = [];
   for (const candidate of candidates) {
     try {
-      return await fs.readFile(candidate);
+      const buffer = await fs.readFile(candidate);
+      return buffer;
     } catch {
-      // try next
+      tried.push(candidate);
     }
   }
 
-  throw new Error(`Template DOCX rapor Juz ${juz} tidak ditemukan. Pastikan file ${fileName} sudah ada di src/lib/reports/templates.`);
+  // Strategi terakhir: fetch dari public/templates/ via URL (kalau ada VERCEL_URL atau request origin).
+  // Ini berfungsi karena public/ files otomatis di-serve sebagai static assets di Vercel.
+  // Kita fetch dari deployment URL sendiri.
+  const publicUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}/templates/${fileName}`
+    : process.env.NEXT_PUBLIC_SITE_URL
+      ? `${process.env.NEXT_PUBLIC_SITE_URL}/templates/${fileName}`
+      : null;
+
+  if (publicUrl) {
+    try {
+      const response = await fetch(publicUrl);
+      if (response.ok) {
+        const arrayBuffer = await response.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+      }
+      tried.push(`fetch ${publicUrl} → ${response.status}`);
+    } catch (error) {
+      tried.push(`fetch ${publicUrl} → ${(error as Error).message}`);
+    }
+  }
+
+  throw new Error(
+    `Template DOCX rapor Juz ${juz} tidak ditemukan. Tried:\n${tried.join("\n")}\n\nPastikan file ${fileName} ada di src/lib/reports/templates atau public/templates.`,
+  );
 }
 
 export async function generateReportDocx(payload: ReportDocxPayload) {

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateReportDocx } from "@/lib/reports/docx-template";
 import { reportPayloadSchema } from "@/lib/reports/report-payload-schema";
 
+// Penting: pakai Node.js runtime (bukan Edge) karena DOCX engine pakai
+// node:fs/promises dan @xmldom/xmldom yang butuh Node API.
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest) {
   let rawBody: unknown;
   try {
@@ -32,7 +36,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Gagal membuat DOCX rapor.";
-    return NextResponse.json({ message }, { status: 500 });
+    // Log ke Vercel function logs untuk debugging.
+    console.error("[docx-route] generate failed:", error);
+    return NextResponse.json({ message, stack: error instanceof Error ? error.stack : undefined }, { status: 500 });
   }
 }
 

@@ -4,6 +4,12 @@ import { z } from "zod";
 import { generateReportDocx } from "@/lib/reports/docx-template";
 import { reportPayloadSchema } from "@/lib/reports/report-payload-schema";
 
+// Pakai Node.js runtime (bukan Edge) karena DOCX engine + JSZip butuh Node API.
+export const runtime = "nodejs";
+// Set max duration agar bulk dengan banyak santri tidak ke-timeout di Vercel.
+// Free tier limit 10s untuk Hobby plan; Pro plan bisa sampai 60s.
+export const maxDuration = 60;
+
 const bulkReportPayloadSchema = z.object({
   reports: z.array(reportPayloadSchema).min(1).max(120),
 });
@@ -48,7 +54,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Gagal membuat ZIP rapor massal.";
-    return NextResponse.json({ message }, { status: 500 });
+    console.error("[docx-bulk-route] generate failed:", error);
+    return NextResponse.json({ message, stack: error instanceof Error ? error.stack : undefined }, { status: 500 });
   }
 }
 
