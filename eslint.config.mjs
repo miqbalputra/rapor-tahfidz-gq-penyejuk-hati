@@ -5,7 +5,16 @@ const eslintConfig = [
   ...nextVitals,
   ...nextTypescript,
   {
-    ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts"],
+    ignores: [
+      "node_modules/**",
+      ".next/**",
+      "out/**",
+      "build/**",
+      "next-env.d.ts",
+      // File template DOCX yang di-encode base64 — terlalu besar untuk di-lint
+      // dan tidak perlu karena di-generate otomatis dari .docx asli.
+      "src/lib/reports/templates/*.base64.ts",
+    ],
   },
   {
     rules: {

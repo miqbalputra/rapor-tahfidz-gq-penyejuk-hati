@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 import JSZip from "jszip";
 import { DOMParser, XMLSerializer } from "@xmldom/xmldom";
 import type { Document as XmlDocument, Element as XmlElement, Node as XmlNode } from "@xmldom/xmldom";
+import { RAPOR_JUZ_29_BASE64 } from "./templates/rapor-juz-29.base64";
+import { RAPOR_JUZ_30_BASE64 } from "./templates/rapor-juz-30.base64";
 
 export type ReportDocxPayload = {
   juz: 29 | 30;
@@ -56,72 +58,56 @@ const TEMPLATE_FILES: Record<29 | 30, string> = {
   30: "rapor-juz-30.docx",
 };
 
+/**
+ * Load template DOCX dari berbagai sumber, dengan urutan prioritas:
+ *   1. Filesystem (paling cepat & efisien memori) — beberapa kandidat path
+ *   2. Embed base64 (paling reliable — dijamin selalu tersedia di runtime)
+ *
+ * Embed base64 adalah jaring pengaman yang dijamin work di Vercel serverless,
+ * karena module di-bundle bersama runtime, tidak peduli filesystem layout.
+ */
 async function loadTemplateBuffer(juz: 29 | 30): Promise<Buffer> {
   const fileName = TEMPLATE_FILES[juz];
 
-  // Resolve path template berdasarkan __dirname dari module ini (lebih reliable
-  // di Vercel daripada process.cwd() yang bisa berbeda antara dev dan production).
-  // Module ini ada di src/lib/reports/docx-template.ts, jadi templates dir = ./templates relatif terhadap module ini.
+  // 1. Coba dari filesystem dulu (lebih ringan dari decode base64).
+  const fsBuffer = await tryLoadFromFilesystem(fileName);
+  if (fsBuffer) return fsBuffer;
+
+  // 2. Fallback ke embed base64 — selalu work di runtime apa pun.
+  const base64 = juz === 29 ? RAPOR_JUZ_29_BASE64 : RAPOR_JUZ_30_BASE64;
+  return Buffer.from(base64, "base64");
+}
+
+async function tryLoadFromFilesystem(fileName: string): Promise<Buffer | null> {
+  // Resolve path berdasarkan __dirname dari module ini (lebih reliable di Vercel
+  // daripada process.cwd() yang bisa berbeda antara dev dan production).
   let moduleDir: string | null = null;
   try {
     moduleDir = path.dirname(fileURLToPath(import.meta.url));
   } catch {
-    // Fallback kalau import.meta.url tidak available (mis. di test env).
+    // import.meta.url tidak available (mis. test env). Skip module-relative paths.
   }
 
   const candidates: string[] = [];
 
-  // Lokasi 1: relatif terhadap module ini (paling reliable saat di-bundle Next.js)
   if (moduleDir) {
     candidates.push(path.join(moduleDir, "templates", fileName));
     candidates.push(path.join(moduleDir, "..", "..", "..", "..", "src", "lib", "reports", "templates", fileName));
-    // Production Next.js: server output bisa di .next/server/app, .next/server/pages, dll
     candidates.push(path.join(moduleDir, "..", "..", "..", "src", "lib", "reports", "templates", fileName));
   }
 
-  // Lokasi 2: relatif terhadap process.cwd() — beberapa lokasi standar di Vercel
   candidates.push(path.join(process.cwd(), "src", "lib", "reports", "templates", fileName));
   candidates.push(path.join(process.cwd(), "public", "templates", fileName));
-  candidates.push(path.join(process.cwd(), ".next", "server", "src", "lib", "reports", "templates", fileName));
-  candidates.push(path.join(process.cwd(), ".next", "standalone", "src", "lib", "reports", "templates", fileName));
-  // Fallback ke folder Bahan untuk dev lama
-  candidates.push(path.join(process.cwd(), "Bahan", juz === 29 ? "4. Rapor Juz 29.docx" : "5. Rapor Juz 30.docx"));
 
-  const tried: string[] = [];
   for (const candidate of candidates) {
     try {
-      const buffer = await fs.readFile(candidate);
-      return buffer;
+      return await fs.readFile(candidate);
     } catch {
-      tried.push(candidate);
+      // Skip kandidat ini, lanjut ke berikutnya.
     }
   }
 
-  // Strategi terakhir: fetch dari public/templates/ via URL (kalau ada VERCEL_URL atau request origin).
-  // Ini berfungsi karena public/ files otomatis di-serve sebagai static assets di Vercel.
-  // Kita fetch dari deployment URL sendiri.
-  const publicUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}/templates/${fileName}`
-    : process.env.NEXT_PUBLIC_SITE_URL
-      ? `${process.env.NEXT_PUBLIC_SITE_URL}/templates/${fileName}`
-      : null;
-
-  if (publicUrl) {
-    try {
-      const response = await fetch(publicUrl);
-      if (response.ok) {
-        const arrayBuffer = await response.arrayBuffer();
-        return Buffer.from(arrayBuffer);
-      }
-      tried.push(`fetch ${publicUrl} → ${response.status}`);
-    } catch (error) {
-      tried.push(`fetch ${publicUrl} → ${(error as Error).message}`);
-    }
-  }
-
-  throw new Error(
-    `Template DOCX rapor Juz ${juz} tidak ditemukan. Tried:\n${tried.join("\n")}\n\nPastikan file ${fileName} ada di src/lib/reports/templates atau public/templates.`,
-  );
+  return null;
 }
 
 export async function generateReportDocx(payload: ReportDocxPayload) {
