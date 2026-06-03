@@ -54,6 +54,7 @@ type SemesterReportRow = {
   target_surah: string;
   target_description: string;
   tested_surahs: unknown;
+  show_tajwid: boolean;
   personality_teacher: string;
   personality_friend: string;
   neatness: string;
@@ -76,6 +77,7 @@ type SemesterReportFormState = {
   target_surah: string;
   target_description: string;
   tested_surahs: TestedSurahDraft[];
+  show_tajwid: boolean;
   personality_teacher: string;
   personality_friend: string;
   neatness: string;
@@ -91,7 +93,7 @@ type ReportCompleteness = {
   warnings: string[];
 };
 
-const trackedAssessmentCodes = ["tartili", "wudhu", "sholat", "tayamum", "shalat_jenazah", "doa", "hadits"] as const;
+const trackedAssessmentCodes = ["tartili", "wudhu", "sholat", "tayamum", "shalat_jenazah", "doa", "hadits", "tajwid"] as const;
 const defaultNoteTemplates: NoteTemplateRow[] = [
   {
     indicator: "Tidak Tercapai",
@@ -268,13 +270,22 @@ export function SemesterReportClient() {
 
     setLoading(true);
     const assessmentTypeIds = assessmentTypes.map((type) => type.id);
-    const [reportRes, examRes, sessionRes] = await Promise.all([
+    const reportQuery = () =>
+      supabase
+        .from("semester_report_cards")
+        .select("id,student_id,academic_year_id,semester_id,report_date,jilid,reading_type,target_juz,target_surah,target_description,tested_surahs,show_tajwid,personality_teacher,personality_friend,neatness,discipline,description_result,custom_description,homeroom_teacher_name,coordinator_name")
+        .eq("academic_year_id", selectedYearId)
+        .eq("semester_id", selectedSemesterId)
+        .in("student_id", studentIds);
+    const fallbackReportQuery = () =>
       supabase
         .from("semester_report_cards")
         .select("id,student_id,academic_year_id,semester_id,report_date,jilid,reading_type,target_juz,target_surah,target_description,tested_surahs,personality_teacher,personality_friend,neatness,discipline,description_result,custom_description,homeroom_teacher_name,coordinator_name")
         .eq("academic_year_id", selectedYearId)
         .eq("semester_id", selectedSemesterId)
-        .in("student_id", studentIds),
+        .in("student_id", studentIds);
+    const [reportRes, examRes, sessionRes] = await Promise.all([
+      reportQuery(),
       assessmentTypeIds.length > 0
         ? supabase
             .from("other_exam_scores")
@@ -286,9 +297,16 @@ export function SemesterReportClient() {
         : Promise.resolve({ data: [], error: null }),
       supabase.from("attendance_sessions").select("id").eq("halaqoh_id", selectedHalaqohId),
     ]);
+    let reportRows = (reportRes.data ?? []) as SemesterReportRow[];
+    let reportErrorMessage = reportRes.error?.message ?? null;
+    if (reportRes.error && isMissingColumnError(reportRes.error.message, "show_tajwid")) {
+      const fallbackReportRes = await fallbackReportQuery();
+      reportRows = ((fallbackReportRes.data ?? []) as Array<Omit<SemesterReportRow, "show_tajwid">>).map((row) => ({ ...row, show_tajwid: false }));
+      reportErrorMessage = fallbackReportRes.error?.message ?? null;
+    }
 
-    if (reportRes.error || examRes.error || sessionRes.error) {
-      notify(reportRes.error?.message ?? examRes.error?.message ?? sessionRes.error?.message ?? "Gagal memuat konteks rapor semester.", "error");
+    if (reportErrorMessage || examRes.error || sessionRes.error) {
+      notify(reportErrorMessage ?? examRes.error?.message ?? sessionRes.error?.message ?? "Gagal memuat konteks rapor semester.", "error");
       setLoading(false);
       return;
     }
@@ -311,7 +329,7 @@ export function SemesterReportClient() {
       attendanceSummary = summarizeAttendance((attendanceRows ?? []) as AttendanceRecordRow[], studentIds);
     }
 
-    setReports(((reportRes.data ?? []) as SemesterReportRow[]).map(normalizeSemesterReportRow));
+    setReports(reportRows.map(normalizeSemesterReportRow));
     setExamScores((examRes.data ?? []) as OtherExamScoreRow[]);
     setAttendanceByStudent(attendanceSummary);
     setLoading(false);
@@ -382,6 +400,7 @@ export function SemesterReportClient() {
       target_surah: form.target_surah.trim(),
       target_description: form.target_description.trim(),
       tested_surahs: collectTestedSurahs(form),
+      show_tajwid: form.show_tajwid,
       personality_teacher: fallbackDash(form.personality_teacher),
       personality_friend: fallbackDash(form.personality_friend),
       neatness: fallbackDash(form.neatness),
@@ -395,11 +414,27 @@ export function SemesterReportClient() {
     const { error } = await supabase.from("semester_report_cards").upsert(payload, {
       onConflict: "student_id,academic_year_id,semester_id",
     });
+    let saveErrorMessage = error?.message ?? null;
+    let savedTajwidPreference = true;
+    if (error && isMissingColumnError(error.message, "show_tajwid")) {
+      const payloadWithoutTajwid: Partial<typeof payload> = { ...payload };
+      delete payloadWithoutTajwid.show_tajwid;
+      const fallbackSave = await supabase.from("semester_report_cards").upsert(payloadWithoutTajwid, {
+        onConflict: "student_id,academic_year_id,semester_id",
+      });
+      saveErrorMessage = fallbackSave.error?.message ?? null;
+      savedTajwidPreference = false;
+    }
 
-    if (error) {
-      notify(error.message, "error");
+    if (saveErrorMessage) {
+      notify(saveErrorMessage, "error");
     } else {
-      notify(`Draft rapor semester ${selectedStudent?.full_name ?? "santri"} berhasil disimpan.`);
+      notify(
+        savedTajwidPreference
+          ? `Draft rapor semester ${selectedStudent?.full_name ?? "santri"} berhasil disimpan.`
+          : `Draft rapor semester ${selectedStudent?.full_name ?? "santri"} tersimpan. Terapkan migration 0009 agar pilihan Tajwid ikut tersimpan.`,
+        savedTajwidPreference ? "success" : "info",
+      );
       await loadContextData();
     }
     setLoading(false);
@@ -471,6 +506,7 @@ export function SemesterReportClient() {
       student.id === selectedStudentId && noteMode === "template"
         ? ""
         : effectiveForm.custom_description.trim();
+    const tajwidScore = getExamValue(student.id, "tajwid");
 
     return {
       studentName: student.full_name,
@@ -492,7 +528,9 @@ export function SemesterReportClient() {
         shalatJenazah: getExamValue(student.id, "shalat_jenazah"),
         doaHarian: getExamValue(student.id, "doa"),
         hafalanHadits: getExamValue(student.id, "hadits"),
+        tajwid: tajwidScore,
       },
+      includeTajwid: effectiveForm.show_tajwid && hasFilledScore(tajwidScore),
       attendance: {
         sick: attendanceByStudent[student.id]?.sick ?? 0,
         permission: attendanceByStudent[student.id]?.permission ?? 0,
@@ -696,6 +734,7 @@ export function SemesterReportClient() {
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <MetricCard label="Kelas" value={selectedHalaqoh?.classes?.name ?? "-"} />
                 <MetricCard label="Tartili" value={String(selectedStudent ? getExamValue(selectedStudent.id, "tartili") : "-")} />
+                <MetricCard label="Tajwid" value={String(selectedStudent ? getExamValue(selectedStudent.id, "tajwid") : "-")} />
                 <MetricCard
                   label="Presensi S/I/A"
                   value={
@@ -729,6 +768,19 @@ export function SemesterReportClient() {
                   <Input onChange={(event) => updateForm("target_description", event.target.value)} value={form.target_description} />
                 </Field>
               </div>
+
+              <label className="flex items-start gap-3 rounded-lg border border-[var(--line)] bg-[var(--surface-soft)] p-4">
+                <input
+                  checked={form.show_tajwid}
+                  className="mt-1 h-4 w-4 rounded border-[var(--line)] accent-[var(--primary)]"
+                  onChange={(event) => updateForm("show_tajwid", event.target.checked)}
+                  type="checkbox"
+                />
+                <span className="text-sm leading-6">
+                  <span className="block font-semibold text-[var(--foreground)]">Tampilkan nilai Tajwid di rapor semester</span>
+                  <span className="text-[var(--muted)]">Baris Tajwid dicetak hanya jika opsi ini aktif dan nilai Tajwid santri sudah tersedia.</span>
+                </span>
+              </label>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 {form.tested_surahs.map((testedSurah, index) => (
@@ -830,6 +882,7 @@ export function SemesterReportClient() {
                   <SummaryLine label="Shalat Jenazah" value={String(selectedStudent ? getExamValue(selectedStudent.id, "shalat_jenazah") : "-")} />
                   <SummaryLine label="Doa Harian" value={String(selectedStudent ? getExamValue(selectedStudent.id, "doa") : "-")} />
                   <SummaryLine label="Hafalan Hadits" value={String(selectedStudent ? getExamValue(selectedStudent.id, "hadits") : "-")} />
+                  <SummaryLine label="Tajwid" value={String(selectedStudent ? getExamValue(selectedStudent.id, "tajwid") : "-")} />
                 </dl>
               </div>
 
@@ -920,6 +973,7 @@ function emptyForm(): SemesterReportFormState {
     target_surah: "",
     target_description: "",
     tested_surahs: [],
+    show_tajwid: false,
     personality_teacher: "-",
     personality_friend: "-",
     neatness: "-",
@@ -951,6 +1005,7 @@ function buildFormState({
     target_surah: report?.target_surah ?? "",
     target_description: report?.target_description ?? "",
     tested_surahs: testedSurahs.slice(0, 2),
+    show_tajwid: report?.show_tajwid ?? false,
     personality_teacher: report?.personality_teacher ?? "-",
     personality_friend: report?.personality_friend ?? "-",
     neatness: report?.neatness ?? "-",
@@ -1027,6 +1082,16 @@ function fallbackDash(value: string) {
   return value.trim() || "-";
 }
 
+function hasFilledScore(value: string | number | null | undefined) {
+  const text = String(value ?? "").trim();
+  return text !== "" && text !== "-";
+}
+
+function isMissingColumnError(message: string, column: string) {
+  const lowerMessage = message.toLowerCase();
+  return lowerMessage.includes(column.toLowerCase()) && (lowerMessage.includes("column") || lowerMessage.includes("schema cache"));
+}
+
 function getStudentCompleteness({
   student,
   effectiveForm,
@@ -1039,6 +1104,7 @@ function getStudentCompleteness({
   const blockingIssues: string[] = [];
   const warnings: string[] = [];
   const tartili = getExamValue(student.id, "tartili");
+  const tajwid = getExamValue(student.id, "tajwid");
   const testedSurahs = collectTestedSurahs(effectiveForm);
   const completeTestedSurahCount = testedSurahs.filter((item) => item.name.trim() && item.score.trim()).length;
 
@@ -1052,6 +1118,7 @@ function getStudentCompleteness({
   if (!effectiveForm.target_juz.trim()) warnings.push("Target hafalan juz masih kosong");
   if (!effectiveForm.target_surah.trim()) warnings.push("Target hafalan surat masih kosong");
   if (!effectiveForm.target_description.trim()) warnings.push("Keterangan target hafalan masih kosong");
+  if (effectiveForm.show_tajwid && !hasFilledScore(tajwid)) warnings.push("Tajwid dicentang, tetapi nilai Tajwid santri belum tersedia");
   if (fallbackDash(effectiveForm.personality_teacher) === "-") warnings.push("Akhlak kepada guru masih default");
   if (fallbackDash(effectiveForm.personality_friend) === "-") warnings.push("Akhlak kepada teman masih default");
   if (fallbackDash(effectiveForm.neatness) === "-") warnings.push("Kerapian masih default");

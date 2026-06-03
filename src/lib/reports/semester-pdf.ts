@@ -48,12 +48,9 @@ export async function generateSemesterReportPdf(payload: SemesterReportPayload) 
   drawTestedSurah(page, fonts, testedSurahs[0], 617.58, rules.testedPredicates);
   drawTestedSurah(page, fonts, testedSurahs[1], 603.38, rules.testedPredicates);
 
-  drawMaterialScore(page, fonts, payload.materialScores.wudhu, 542.28, rules.materialPredicates);
-  drawMaterialScore(page, fonts, payload.materialScores.sholat, 527.75, rules.materialPredicates);
-  drawMaterialScore(page, fonts, payload.materialScores.tayamum, 513.25, rules.materialPredicates);
-  drawMaterialScore(page, fonts, payload.materialScores.shalatJenazah, 498.75, rules.materialPredicates);
-  drawMaterialScore(page, fonts, payload.materialScores.doaHarian, 484.25, rules.materialPredicates);
-  drawMaterialScore(page, fonts, payload.materialScores.hafalanHadits, 470.05, rules.materialPredicates);
+  buildMaterialRows(payload).forEach((item, index) => {
+    drawMaterialRow(page, fonts, item.label, item.score, 542.28 - index * 14.5, index + 1, rules.materialPredicates);
+  });
 
   drawText(page, fonts, displayValue(payload.attendance.sick), { x: 53.2, y: 409.25, width: 162.23, align: "center" });
   drawText(page, fonts, displayValue(payload.attendance.permission), { x: 215.43, y: 409.25, width: 152.02, align: "center" });
@@ -81,9 +78,23 @@ function drawTestedSurah(page: PDFPage, fonts: { regular: PDFFont; bold: PDFFont
   drawText(page, fonts, predicateLabel(item?.score, rules), { x: 367.45, y, width: 191.43, align: "center" });
 }
 
-function drawMaterialScore(page: PDFPage, fonts: { regular: PDFFont; bold: PDFFont }, score: string | number | undefined, y: number, rules: PredicateRule[]) {
+function drawMaterialRow(page: PDFPage, fonts: { regular: PDFFont; bold: PDFFont }, label: string, score: string | number | undefined, y: number, order: number, rules: PredicateRule[]) {
+  drawText(page, fonts, String(order), { x: 53.2, y, width: 31.8, align: "center" });
+  drawText(page, fonts, label, { x: 86.8, y });
   drawText(page, fonts, displayValue(score), { x: 215.43, y, width: 152.02, align: "center" });
   drawText(page, fonts, predicateLabel(score, rules), { x: 367.45, y, width: 191.43, align: "center" });
+}
+
+function buildMaterialRows(payload: SemesterReportPayload) {
+  return [
+    { label: "Praktek Wudhu", score: payload.materialScores.wudhu },
+    { label: "Praktek Sholat", score: payload.materialScores.sholat },
+    { label: "Tayamum", score: payload.materialScores.tayamum },
+    { label: "Shalat Jenazah", score: payload.materialScores.shalatJenazah },
+    { label: "Do'a Harian", score: payload.materialScores.doaHarian },
+    { label: "Hafalan Hadits", score: payload.materialScores.hafalanHadits },
+    ...(payload.includeTajwid ? [{ label: "Tajwid", score: payload.materialScores.tajwid }] : []),
+  ];
 }
 
 function drawText(page: PDFPage, fonts: { regular: PDFFont; bold: PDFFont }, text: string, placement: TextPlacement) {

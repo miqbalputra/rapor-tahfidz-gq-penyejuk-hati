@@ -25,7 +25,9 @@ export const semesterReportPayloadSchema = z.object({
     shalatJenazah: z.union([z.string(), z.number()]).optional().default("-"),
     doaHarian: z.union([z.string(), z.number()]).optional().default("-"),
     hafalanHadits: z.union([z.string(), z.number()]).optional().default("-"),
+    tajwid: z.union([z.string(), z.number()]).optional().default("-"),
   }),
+  includeTajwid: z.boolean().optional().default(false),
   attendance: z.object({
     sick: z.union([z.string(), z.number()]).optional().default("-"),
     permission: z.union([z.string(), z.number()]).optional().default("-"),

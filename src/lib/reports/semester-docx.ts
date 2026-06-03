@@ -96,14 +96,12 @@ export async function generateSemesterReportDocx(payload: SemesterReportPayload)
           sectionLabel("C. Materi Tambahan"),
           createScoreTable(
             ["NO", "Materi", "Nilai", "Predikat"],
-            [
-              ["1", "Praktek Wudhu", displayScore(payload.materialScores.wudhu), predicateLabel(payload.materialScores.wudhu, "material")],
-              ["2", "Praktek Sholat", displayScore(payload.materialScores.sholat), predicateLabel(payload.materialScores.sholat, "material")],
-              ["3", "Tayamum", displayScore(payload.materialScores.tayamum), predicateLabel(payload.materialScores.tayamum, "material")],
-              ["4", "Shalat Jenazah", displayScore(payload.materialScores.shalatJenazah), predicateLabel(payload.materialScores.shalatJenazah, "material")],
-              ["5", "Do'a Harian", displayScore(payload.materialScores.doaHarian), predicateLabel(payload.materialScores.doaHarian, "material")],
-              ["6", "Hafalan Hadits", displayScore(payload.materialScores.hafalanHadits), predicateLabel(payload.materialScores.hafalanHadits, "material")],
-            ],
+            buildMaterialRows(payload).map((item, index) => [
+              String(index + 1),
+              item.label,
+              displayScore(item.score),
+              predicateLabel(item.score, "material"),
+            ]),
             [800, 4700, 1800, 2500],
           ),
           spacer(80),
@@ -250,6 +248,18 @@ function createSignatureTable(payload: SemesterReportPayload) {
       }),
     ],
   });
+}
+
+function buildMaterialRows(payload: SemesterReportPayload) {
+  return [
+    { label: "Praktek Wudhu", score: payload.materialScores.wudhu },
+    { label: "Praktek Sholat", score: payload.materialScores.sholat },
+    { label: "Tayamum", score: payload.materialScores.tayamum },
+    { label: "Shalat Jenazah", score: payload.materialScores.shalatJenazah },
+    { label: "Do'a Harian", score: payload.materialScores.doaHarian },
+    { label: "Hafalan Hadits", score: payload.materialScores.hafalanHadits },
+    ...(payload.includeTajwid ? [{ label: "Tajwid", score: payload.materialScores.tajwid }] : []),
+  ];
 }
 
 function createScoreTable(headers: string[], rows: string[][], widths: number[], minimumBodyRows = 1) {

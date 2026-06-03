@@ -58,6 +58,8 @@ export async function generateSemesterReportXlsx(payload: SemesterReportPayload,
     payload.descriptionResult,
     payload.homeroomTeacherName,
     payload.coordinatorName,
+    normalizeCellValue(payload.materialScores.tajwid),
+    payload.includeTajwid ? "Ya" : "Tidak",
   ];
 
   const inputRow = inputSheet.getRow(4);
@@ -80,6 +82,7 @@ export async function generateSemesterReportXlsx(payload: SemesterReportPayload,
     printSheet.getCell("E4").value = `TAHUN AJARAN ${payload.academicYear}`;
     printSheet.getCell("F45").value = `            Purbalingga, ${formatIndonesianDate(payload.reportDate)}`;
     applyTestedSurahRowVisibility(printSheet, testedSurahs);
+    applyOptionalTajwidRow(printSheet, payload, readPredicateRules(predicateSheet, 14, 17, 1, 2));
     if (payload.customDescription?.trim()) {
       printSheet.getCell("A42").value = payload.customDescription.trim();
     }
@@ -100,14 +103,7 @@ function applyPrintSheetValues(
   },
 ) {
   const testedSurahs = [payload.testedSurahs[0] ?? null, payload.testedSurahs[1] ?? null];
-  const materialRows = [
-    { row: 23, label: "Praktek Wudhu", score: payload.materialScores.wudhu },
-    { row: 24, label: "Praktek Sholat", score: payload.materialScores.sholat },
-    { row: 25, label: "Tayamum", score: payload.materialScores.tayamum },
-    { row: 26, label: "Shalat Jenazah", score: payload.materialScores.shalatJenazah },
-    { row: 27, label: "Do'a Harian", score: payload.materialScores.doaHarian },
-    { row: 28, label: "Hafalan Hadits", score: payload.materialScores.hafalanHadits },
-  ];
+  const materialRows = buildMaterialRows(payload);
   const noteText = payload.customDescription?.trim() || rules.descriptionByResult[payload.descriptionResult] || payload.descriptionResult;
 
   printSheet.getCell("A4").value = `TAHUN AJARAN ${payload.academicYear}`;
@@ -129,10 +125,16 @@ function applyPrintSheetValues(
   applyTestedSurahRowVisibility(printSheet, testedSurahs);
 
   for (const item of materialRows) {
-    printSheet.getCell(`A${item.row}`).value = item.row - 22;
+    printSheet.getCell(`A${item.row}`).value = item.order;
     printSheet.getCell(`B${item.row}`).value = item.label;
     printSheet.getCell(`E${item.row}`).value = normalizeCellValue(item.score);
     printSheet.getCell(`F${item.row}`).value = predicateLabel(item.score, rules.materialPredicates);
+  }
+  if (!payload.includeTajwid) {
+    printSheet.getCell("A29").value = null;
+    printSheet.getCell("B29").value = null;
+    printSheet.getCell("E29").value = null;
+    printSheet.getCell("F29").value = null;
   }
 
   printSheet.getCell("A32").value = normalizeCellValue(payload.attendance.sick);
@@ -152,6 +154,26 @@ function applyPrintSheetValues(
   printSheet.getCell("F45").value = `            Purbalingga, ${formatIndonesianDate(payload.reportDate)}`;
   printSheet.getCell("E50").value = payload.homeroomTeacherName;
   printSheet.getCell("G50").value = payload.coordinatorName;
+}
+
+function buildMaterialRows(payload: SemesterReportPayload) {
+  return [
+    { row: 23, order: 1, label: "Praktek Wudhu", score: payload.materialScores.wudhu },
+    { row: 24, order: 2, label: "Praktek Sholat", score: payload.materialScores.sholat },
+    { row: 25, order: 3, label: "Tayamum", score: payload.materialScores.tayamum },
+    { row: 26, order: 4, label: "Shalat Jenazah", score: payload.materialScores.shalatJenazah },
+    { row: 27, order: 5, label: "Do'a Harian", score: payload.materialScores.doaHarian },
+    { row: 28, order: 6, label: "Hafalan Hadits", score: payload.materialScores.hafalanHadits },
+    ...(payload.includeTajwid ? [{ row: 29, order: 7, label: "Tajwid", score: payload.materialScores.tajwid }] : []),
+  ];
+}
+
+function applyOptionalTajwidRow(printSheet: ExcelJS.Worksheet, payload: SemesterReportPayload, materialPredicates: PredicateRule[]) {
+  if (!payload.includeTajwid) return;
+  printSheet.getCell("A29").value = 7;
+  printSheet.getCell("B29").value = "Tajwid";
+  printSheet.getCell("E29").value = normalizeCellValue(payload.materialScores.tajwid);
+  printSheet.getCell("F29").value = predicateLabel(payload.materialScores.tajwid, materialPredicates);
 }
 
 function writeTestedSurahRow(
