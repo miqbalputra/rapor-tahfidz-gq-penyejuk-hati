@@ -22,21 +22,21 @@ export function Toast({ message, tone = "info" }: ToastProps) {
   return (
     <div
       className={cn(
-        "fixed bottom-6 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 items-start gap-4 rounded-lg border-2 bg-[var(--surface)] p-5 text-base shadow-2xl",
+        "fixed bottom-6 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 items-start gap-4 rounded-md border bg-[var(--surface)] p-4 text-base shadow-[0_16px_40px_rgba(15,15,15,0.16)]",
         "sm:left-auto sm:right-6 sm:w-full sm:translate-x-0",
-        tone === "success" && "border-emerald-500 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-100",
-        tone === "error" && "border-red-500 bg-red-50 text-red-950 dark:bg-red-950/40 dark:text-red-100",
-        tone === "info" && "border-[var(--primary)] bg-[var(--surface-soft)] text-[var(--foreground)]",
+        tone === "success" && "border-[#d7e4d4] bg-[#edf3ec] text-[#35684c] dark:bg-[#253127] dark:text-[#9bc6a7]",
+        tone === "error" && "border-[#f4c7ca] bg-[#fdebec] text-[#b3261e] dark:bg-[#3a2021] dark:text-[#ffaaa5]",
+        tone === "info" && "border-[var(--line)] bg-[var(--surface)] text-[var(--foreground)]",
       )}
       role="status"
     >
-      {tone === "success" ? <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-700 dark:text-emerald-400" size={30} /> : null}
-      {tone === "error" ? <XCircle className="mt-0.5 shrink-0 text-red-700 dark:text-red-400" size={30} /> : null}
+      {tone === "success" ? <CheckCircle2 className="mt-0.5 shrink-0 text-[#448361]" size={24} /> : null}
+      {tone === "error" ? <XCircle className="mt-0.5 shrink-0 text-[#b3261e]" size={24} /> : null}
       <div>
-        <p className="text-sm font-bold uppercase tracking-wide">
+        <p className="text-xs font-semibold uppercase tracking-wide">
           {tone === "success" ? "Berhasil" : tone === "error" ? "Gagal" : "Info"}
         </p>
-        <p className="mt-1 text-base font-semibold leading-7">{message}</p>
+        <p className="mt-1 text-sm font-medium leading-6">{message}</p>
       </div>
     </div>
   );

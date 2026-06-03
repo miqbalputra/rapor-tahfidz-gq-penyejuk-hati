@@ -169,13 +169,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <aside className="no-print fixed inset-y-0 left-0 hidden w-72 border-r border-[var(--line)] bg-[var(--surface)] lg:block">
+      <aside className="no-print fixed inset-y-0 left-0 hidden w-72 border-r border-[var(--line)] bg-[var(--surface-muted)] lg:block">
         <div className="flex h-20 items-center gap-3 border-b border-[var(--line)] px-5">
-          <div className="grid size-11 place-items-center rounded-md bg-[var(--primary)] text-white">
+          <div className="grid size-10 place-items-center rounded-md bg-[var(--foreground)] text-[var(--surface)] shadow-sm">
             <BookOpenCheck size={24} />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-bold">{settings.short_name || "GQ Penyejuk Hati"}</p>
+            <p className="truncate text-sm font-semibold">{settings.short_name || "GQ Penyejuk Hati"}</p>
             <p className="truncate text-xs text-[var(--muted)]">Aplikasi Rapor Tahfidz</p>
           </div>
         </div>
@@ -188,7 +188,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 className={cn(
                   "flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-semibold transition",
                   active
-                    ? "bg-[var(--surface-soft)] text-[var(--primary-strong)]"
+                    ? "bg-[var(--surface)] text-[var(--foreground)] shadow-[0_1px_2px_rgba(15,15,15,0.04)]"
                     : "text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]",
                 )}
                 href={item.href}
@@ -203,13 +203,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="lg:pl-72">
-        <header className="no-print sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)]/95 px-4 py-3 backdrop-blur sm:px-6">
+        <header className="no-print sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--background)]/90 px-4 py-3 backdrop-blur sm:px-6">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
                 {periodLabel || "Belum ada periode aktif"}
               </p>
-              <h1 className="truncate text-lg font-bold text-[var(--foreground)] sm:text-xl">Aplikasi Rapor Tahfidz</h1>
+              <h1 className="truncate text-lg font-semibold text-[var(--foreground)] sm:text-xl">Aplikasi Rapor Tahfidz</h1>
             </div>
             <div className="shrink-0 flex items-center gap-2">
               <ThemeToggle />
@@ -221,7 +221,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <main className="px-3 pb-28 pt-4 sm:px-6 sm:py-6 lg:px-8">{children}</main>
       </div>
 
-      <nav className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-[var(--line)] bg-[var(--surface)]/95 px-2 pb-[calc(0.4rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur lg:hidden">
+      <nav className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-[var(--line)] bg-[var(--surface)]/95 px-2 pb-[calc(0.4rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_rgba(15,15,15,0.08)] backdrop-blur lg:hidden">
         <div className={cn("grid gap-1", gridColsClass)}>
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
@@ -231,7 +231,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 className={cn(
                   "flex min-h-[3.75rem] min-w-0 flex-col items-center justify-start gap-1 rounded-md px-1 py-1.5 text-center font-semibold transition",
                   navCount <= 5 ? "text-[11px]" : "text-[10px]",
-                  active ? "bg-[var(--primary)] text-white" : "text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]",
+                  active ? "bg-[var(--foreground)] text-[var(--surface)]" : "text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]",
                 )}
                 href={item.href}
                 key={item.href}
@@ -246,8 +246,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {authGateState !== "authenticated" ? (
         <div className="no-print fixed inset-0 z-[60] grid place-items-center bg-[var(--background)] px-4">
-          <section className="w-full max-w-md rounded-lg border border-[var(--line)] bg-[var(--surface)] p-5 text-center shadow-sm">
-            <div className="mx-auto grid size-12 place-items-center rounded-md bg-[var(--primary)] text-white">
+          <section className="w-full max-w-md rounded-md border border-[var(--line)] bg-[var(--surface)] p-5 text-center shadow-[0_12px_32px_rgba(15,15,15,0.08)]">
+            <div className="mx-auto grid size-12 place-items-center rounded-md bg-[var(--foreground)] text-[var(--surface)]">
               <BookOpenCheck size={26} />
             </div>
             <h1 className="mt-4 text-xl font-bold">Aplikasi Rapor Tahfidz</h1>

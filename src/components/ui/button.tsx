@@ -10,17 +10,17 @@ export function Button({ className, variant = "primary", size = "md", ...props }
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-md font-semibold transition",
+        "inline-flex cursor-pointer items-center justify-center gap-2 rounded-md font-semibold transition",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]",
         "disabled:cursor-not-allowed disabled:opacity-60",
         size === "md" && "min-h-10 px-4 text-sm",
         size === "sm" && "min-h-9 px-3 text-xs",
         size === "lg" && "min-h-12 px-5 text-base",
-        variant === "primary" && "bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)]",
-        variant === "secondary" && "border border-[var(--line)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-soft)]",
+        variant === "primary" && "bg-[var(--foreground)] text-[var(--surface)] shadow-sm hover:bg-[var(--primary-strong)]",
+        variant === "secondary" && "border border-[var(--line)] bg-[var(--surface)] text-[var(--foreground)] shadow-[0_1px_1px_rgba(0,0,0,0.03)] hover:bg-[var(--surface-soft)]",
         variant === "ghost" && "text-[var(--foreground)] hover:bg-[var(--surface-soft)]",
-        variant === "danger" && "bg-red-600 text-white hover:bg-red-700",
-        variant === "success" && "bg-emerald-600 text-white hover:bg-emerald-700",
+        variant === "danger" && "bg-[#d44c47] text-white hover:bg-[#bd3d39]",
+        variant === "success" && "bg-[#448361] text-white hover:bg-[#35684c]",
         className,
       )}
       {...props}

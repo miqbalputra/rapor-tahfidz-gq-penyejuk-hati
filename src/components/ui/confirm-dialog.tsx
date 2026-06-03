@@ -47,22 +47,22 @@ export function ConfirmDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 p-3 sm:items-center" role="dialog" aria-modal="true">
-      <div className="w-full max-w-md rounded-2xl bg-[var(--surface)] shadow-2xl">
+    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-3 sm:items-center" role="dialog" aria-modal="true">
+      <div className="w-full max-w-md rounded-md border border-[var(--line)] bg-[var(--surface)] shadow-[0_20px_60px_rgba(15,15,15,0.24)]">
         <div className="flex items-start justify-between gap-3 px-5 pt-5">
           <div className="flex items-start gap-3">
             <span
               className={cn(
-                "grid size-10 shrink-0 place-items-center rounded-full",
+                "grid size-10 shrink-0 place-items-center rounded-md",
                 tone === "danger"
-                  ? "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300"
-                  : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200",
+                  ? "bg-[#fdebec] text-[#b3261e] dark:bg-[#3a2021] dark:text-[#ffaaa5]"
+                  : "bg-[#fbf3db] text-[#8f6b1f] dark:bg-[#332b1c] dark:text-[#e0c06f]",
               )}
             >
               <AlertTriangle size={20} />
             </span>
             <div className="min-w-0">
-              <h2 className="text-lg font-bold leading-tight">{title}</h2>
+              <h2 className="text-lg font-semibold leading-tight">{title}</h2>
               <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{description}</p>
             </div>
           </div>

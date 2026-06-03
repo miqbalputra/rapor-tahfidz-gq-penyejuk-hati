@@ -16,26 +16,26 @@ export function StepCard({ number, title, description, details, icon, tone = "de
   return (
     <article
       className={cn(
-        "relative flex flex-col gap-3 rounded-lg border bg-[var(--surface)] p-4 sm:p-5",
-        tone === "primary" ? "border-[var(--primary)] shadow-md" : "border-[var(--line)] shadow-sm",
+        "relative flex flex-col gap-3 rounded-md border bg-[var(--surface)] p-4 sm:p-5",
+        tone === "primary" ? "border-[var(--foreground)] shadow-[0_1px_2px_rgba(15,15,15,0.04)]" : "border-[var(--line)] shadow-[0_1px_2px_rgba(15,15,15,0.04)]",
         className,
       )}
     >
       <div className="flex items-start gap-3">
         <div
           className={cn(
-            "grid size-10 shrink-0 place-items-center rounded-full text-sm font-bold",
+            "grid size-10 shrink-0 place-items-center rounded-md text-sm font-semibold",
             tone === "primary"
-              ? "bg-[var(--primary)] text-white"
-              : "bg-[var(--surface-soft)] text-[var(--primary-strong)]",
+              ? "bg-[var(--foreground)] text-[var(--surface)]"
+              : "bg-[var(--surface-soft)] text-[var(--foreground)]",
           )}
         >
           {number}
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            {icon ? <span className="text-[var(--primary)]">{icon}</span> : null}
-            <h3 className="text-base font-bold text-[var(--foreground)]">{title}</h3>
+            {icon ? <span className="text-[var(--foreground)]">{icon}</span> : null}
+            <h3 className="text-base font-semibold text-[var(--foreground)]">{title}</h3>
           </div>
           {description ? (
             <div className="mt-1 text-sm leading-6 text-[var(--muted)]">{description}</div>
@@ -47,7 +47,7 @@ export function StepCard({ number, title, description, details, icon, tone = "de
         <ul className="space-y-1.5 pl-13 text-sm leading-6 text-[var(--muted)]">
           {details.map((line) => (
             <li key={line} className="flex gap-2">
-              <span aria-hidden="true" className="mt-1 block size-1.5 shrink-0 rounded-full bg-[var(--primary)]" />
+              <span aria-hidden="true" className="mt-1 block size-1.5 shrink-0 rounded-full bg-[var(--muted)]" />
               <span>{line}</span>
             </li>
           ))}

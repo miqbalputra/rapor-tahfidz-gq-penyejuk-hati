@@ -48,12 +48,12 @@ export function DataTable({
 
   return (
     <div className={cn("space-y-3", className)}>
-      <div className="overflow-x-auto rounded-md border border-[var(--line)]">
-        <div className="border-b border-[var(--line)] bg-[var(--surface-soft)] px-3 py-2 text-xs font-semibold text-[var(--muted)] sm:hidden">
+      <div className="overflow-x-auto rounded-md border border-[var(--line)] bg-[var(--surface)]">
+        <div className="border-b border-[var(--line)] bg-[var(--surface-muted)] px-3 py-2 text-xs font-medium text-[var(--muted)] sm:hidden">
           Geser tabel ke samping untuk melihat semua kolom.
         </div>
         <table className="w-full min-w-[720px] border-collapse bg-[var(--surface)] text-sm">
-          <thead className="bg-[var(--surface-soft)] text-left text-xs font-bold uppercase tracking-wide text-[var(--muted)]">
+          <thead className="bg-[var(--surface-muted)] text-left text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
             <tr>
               {columns.map((column) => (
                 <th className="border-b border-[var(--line)] px-3 py-3" key={column}>
@@ -71,7 +71,7 @@ export function DataTable({
               </tr>
             ) : (
               visibleRows.map((row, rowIndex) => (
-                <tr className="border-b border-[var(--line)] last:border-0" key={rowIndex}>
+                <tr className="border-b border-[var(--line)] transition last:border-0 hover:bg-[var(--surface-muted)]" key={rowIndex}>
                   {row.map((cell, cellIndex) => (
                     <td className="px-3 py-3 align-middle text-[var(--foreground)]" key={`${rowIndex}-${cellIndex}`}>
                       {cell}
@@ -98,7 +98,7 @@ export function DataTable({
               <span>Per halaman</span>
               <select
                 aria-label="Jumlah baris per halaman"
-                className="min-h-9 rounded-md border border-[var(--line)] bg-[var(--surface)] px-2 text-sm"
+                className="min-h-9 rounded-md border border-[var(--line)] bg-[var(--surface)] px-2 text-sm outline-none focus:border-[var(--foreground)] focus:ring-2 focus:ring-[var(--focus)]"
                 onChange={(event) => {
                   setPageSize(Number(event.target.value));
                   setPage(1);

@@ -16,29 +16,33 @@
 }
 
 :root {
-  --background: #f7f6f2;
-  --foreground: #1e2520;
-  --muted: #68736c;
-  --line: #d8ded5;
-  --primary: #1f7a5c;
-  --primary-strong: #155f47;
+  --background: #f7f7f5;
+  --foreground: #202020;
+  --muted: #6f6f6f;
+  --line: #e6e4df;
+  --primary: #2f3437;
+  --primary-strong: #111111;
   --surface: #ffffff;
-  --surface-soft: #eef4f0;
-  --warning: #a56315;
-  --danger: #b42318;
+  --surface-soft: #f1f1ef;
+  --surface-muted: #fafafa;
+  --focus: #d8d8d5;
+  --warning: #9f6b16;
+  --danger: #b3261e;
 }
 
 .dark {
-  --background: #0b1311;
-  --foreground: #e8efea;
-  --muted: #9ba89e;
-  --line: #2e3a36;
-  --primary: #34b88c;
-  --primary-strong: #4ccf9f;
-  --surface: #161f1c;
-  --surface-soft: #1f2c28;
-  --warning: #fbbf24;
-  --danger: #f87171;
+  --background: #191919;
+  --foreground: #f1f1ef;
+  --muted: #a3a29e;
+  --line: #37352f;
+  --primary: #4a4a4a;
+  --primary-strong: #5a5a5a;
+  --surface: #202020;
+  --surface-soft: #2a2a2a;
+  --surface-muted: #242424;
+  --focus: #4b4b4b;
+  --warning: #d99a32;
+  --danger: #ff7369;
 }
 
 .dark img {
@@ -59,8 +63,18 @@ body {
   min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   overscroll-behavior-y: contain;
+}
+
+::selection {
+  background: #d8d8d5;
+  color: #111111;
+}
+
+.dark ::selection {
+  background: #4b4b4b;
+  color: #ffffff;
 }
 
 button,

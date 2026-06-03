@@ -17,18 +17,18 @@ type ToolbarSectionProps = {
  */
 export function ToolbarSection({ title, description, step, icon, action, children, className }: ToolbarSectionProps) {
   return (
-    <section className={cn("rounded-lg border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm sm:p-5", className)}>
+    <section className={cn("rounded-md border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[0_1px_2px_rgba(15,15,15,0.04)] sm:p-5", className)}>
       <div className="mb-4 flex flex-col gap-3 border-b border-[var(--line)] pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
           {step !== undefined ? (
-            <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--primary)] text-sm font-bold text-white">
+            <div className="grid size-9 shrink-0 place-items-center rounded-md bg-[var(--foreground)] text-sm font-semibold text-[var(--surface)]">
               {step}
             </div>
           ) : null}
           <div>
             <div className="flex items-center gap-2">
-              {icon ? <span className="text-[var(--primary)]">{icon}</span> : null}
-              <h2 className="text-lg font-bold text-[var(--foreground)]">{title}</h2>
+              {icon ? <span className="text-[var(--foreground)]">{icon}</span> : null}
+              <h2 className="text-lg font-semibold text-[var(--foreground)]">{title}</h2>
             </div>
             {description ? <div className="mt-1 text-sm leading-6 text-[var(--muted)]">{description}</div> : null}
           </div>

@@ -39,6 +39,8 @@ type Props = {
   onSave: (surahId: string) => void;
   onToggleLock: (surahId: string, locked: boolean) => void;
   fluencyMax: number;
+  fluencyUsesMistakeDeduction: boolean;
+  fluencyDeductionPerMistake: number;
   fashohahMax: number;
   tajwidMax: number;
 };
@@ -52,6 +54,8 @@ export function TahfidzMobileCards({
   onSave,
   onToggleLock,
   fluencyMax,
+  fluencyUsesMistakeDeduction,
+  fluencyDeductionPerMistake,
   fashohahMax,
   tajwidMax,
 }: Props) {
@@ -98,19 +102,21 @@ export function TahfidzMobileCards({
                   value={item.draft.fluency_mistakes}
                 />
                 <p className="text-xs text-[var(--muted)]">
-                  Diisi guru. Sistem akan menghitung nilai kelancaran (maks {fluencyMax}) otomatis dari jumlah salah.
+                  {fluencyUsesMistakeDeduction
+                    ? `Diisi guru. Nilai kelancaran otomatis: ${fluencyMax} - (salah x ${fluencyDeductionPerMistake}).`
+                    : "Diisi hanya jika rubrik memakai mode hitung dari salah."}
                 </p>
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor={`fluency-${item.id}`}>Kelancaran (maks {fluencyMax})</Label>
                 <Input
-                  disabled={disabled}
+                  disabled={disabled || fluencyUsesMistakeDeduction}
                   id={`fluency-${item.id}`}
                   inputMode="decimal"
                   onChange={(event) => onChangeDraft(item.id, "fluency_score", event.target.value)}
                   type="number"
-                  value={item.draft.fluency_score}
+                  value={fluencyUsesMistakeDeduction ? String(item.fluency) : item.draft.fluency_score}
                 />
               </div>
               <div className="space-y-1.5">

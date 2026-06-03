@@ -15,9 +15,9 @@ export function EmptyState({ icon, title, description, action, className, tone =
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 text-center",
-        tone === "primary" && "border-[var(--primary)]/40 bg-[var(--surface-soft)]",
-        tone === "warning" && "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/30",
+        "flex flex-col items-center justify-center rounded-md border border-dashed p-8 text-center",
+        tone === "primary" && "border-[var(--line)] bg-[var(--surface-soft)]",
+        tone === "warning" && "border-[#efe0b5] bg-[#fbf3db] dark:border-[#55492c] dark:bg-[#332b1c]",
         tone === "neutral" && "border-[var(--line)] bg-[var(--surface)]",
         className,
       )}
@@ -25,17 +25,17 @@ export function EmptyState({ icon, title, description, action, className, tone =
       <div
         className={cn(
           "mb-4 grid size-14 place-items-center rounded-full",
-          tone === "primary" && "bg-[var(--primary)] text-white",
-          tone === "warning" && "bg-amber-200 text-amber-900 dark:bg-amber-900/60 dark:text-amber-100",
-          tone === "neutral" && "bg-[var(--surface-soft)] text-[var(--primary)]",
+          tone === "primary" && "bg-[var(--foreground)] text-[var(--surface)]",
+          tone === "warning" && "bg-[#efe0b5] text-[#6f5318] dark:bg-[#55492c] dark:text-[#e0c06f]",
+          tone === "neutral" && "bg-[var(--surface-soft)] text-[var(--foreground)]",
         )}
       >
         {icon}
       </div>
       <h3
         className={cn(
-          "text-lg font-bold",
-          tone === "warning" ? "text-amber-900 dark:text-amber-100" : "text-[var(--foreground)]",
+          "text-lg font-semibold",
+          tone === "warning" ? "text-[#6f5318] dark:text-[#e0c06f]" : "text-[var(--foreground)]",
         )}
       >
         {title}
@@ -43,7 +43,7 @@ export function EmptyState({ icon, title, description, action, className, tone =
       <p
         className={cn(
           "mt-2 max-w-md text-sm leading-6",
-          tone === "warning" ? "text-amber-800 dark:text-amber-200/90" : "text-[var(--muted)]",
+          tone === "warning" ? "text-[#8f6b1f] dark:text-[#e0c06f]" : "text-[var(--muted)]",
         )}
       >
         {description}

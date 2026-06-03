@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  allowedDevOrigins: ["127.0.0.1"],
   // Pastikan template DOCX rapor ikut ter-bundle ke runtime serverless di Vercel.
   // Ada 2 lokasi yang di-trace untuk redundancy:
   //   1. src/lib/reports/templates/ — co-located dengan kode engine (paling reliable saat di-bundle)

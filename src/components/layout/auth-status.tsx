@@ -34,7 +34,7 @@ export function AuthStatus() {
   if (!email) {
     return (
       <Link
-        className="inline-flex min-h-10 items-center justify-center rounded-md bg-[var(--primary)] px-4 text-sm font-semibold text-white"
+        className="inline-flex min-h-10 items-center justify-center rounded-md bg-[var(--foreground)] px-4 text-sm font-semibold text-[var(--surface)] shadow-sm transition hover:bg-[var(--primary-strong)]"
         href="/login"
       >
         Login
@@ -44,7 +44,7 @@ export function AuthStatus() {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="hidden items-center gap-2 rounded-md bg-[var(--surface-soft)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] sm:flex">
+      <div className="hidden items-center gap-2 rounded-md border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-sm font-medium text-[var(--foreground)] sm:flex">
         <UserCircle size={18} />
         {email}
       </div>

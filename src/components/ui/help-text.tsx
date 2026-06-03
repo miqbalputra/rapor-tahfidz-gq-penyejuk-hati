@@ -15,9 +15,9 @@ export function HelpText({ children, tone = "info", icon, className, title }: He
     <div
       className={cn(
         "flex items-start gap-3 rounded-md border p-4 text-sm leading-6",
-        tone === "info" && "border-emerald-100 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100",
-        tone === "warning" && "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100",
-        tone === "success" && "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100",
+        tone === "info" && "border-[var(--line)] bg-[var(--surface-muted)] text-[var(--foreground)]",
+        tone === "warning" && "border-[#efe0b5] bg-[#fbf3db] text-[#6f5318] dark:border-[#55492c] dark:bg-[#332b1c] dark:text-[#e0c06f]",
+        tone === "success" && "border-[#d7e4d4] bg-[#edf3ec] text-[#35684c] dark:border-[#3b4a3e] dark:bg-[#253127] dark:text-[#9bc6a7]",
         className,
       )}
     >

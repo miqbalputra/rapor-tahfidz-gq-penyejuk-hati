@@ -28,10 +28,10 @@ export function TabBar<T extends string>({ items, active, onChange, className }:
         {items.map((item) => (
           <button
             className={cn(
-              "inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition",
+              "inline-flex shrink-0 items-center gap-2 rounded-md border px-4 py-2 text-sm font-semibold transition",
               active === item.id
-                ? "border-[var(--primary)] bg-[var(--primary)] text-white"
-                : "border-[var(--line)] bg-[var(--surface)] text-[var(--muted)] hover:border-[var(--primary)]/40",
+                ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--surface)]"
+                : "border-[var(--line)] bg-[var(--surface)] text-[var(--muted)] hover:bg-[var(--surface-soft)]",
             )}
             key={item.id}
             onClick={() => onChange(item.id)}
@@ -43,7 +43,7 @@ export function TabBar<T extends string>({ items, active, onChange, className }:
               <span
                 className={cn(
                   "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold",
-                  active === item.id ? "bg-[var(--surface)] text-[var(--primary)]" : "bg-[var(--surface-soft)] text-[var(--foreground)]",
+                  active === item.id ? "bg-[var(--surface)] text-[var(--foreground)]" : "bg-[var(--surface-soft)] text-[var(--foreground)]",
                 )}
               >
                 {item.badge}
@@ -60,10 +60,10 @@ export function TabBar<T extends string>({ items, active, onChange, className }:
           return (
             <button
               className={cn(
-                "flex items-start gap-3 rounded-lg border p-4 text-left transition",
+                "flex items-start gap-3 rounded-md border p-4 text-left transition",
                 isActive
-                  ? "border-[var(--primary)] bg-[var(--surface-soft)] shadow-sm"
-                  : "border-[var(--line)] bg-[var(--surface)] hover:border-[var(--primary)]/40 hover:bg-[var(--surface-soft)]/60",
+                  ? "border-[var(--foreground)] bg-[var(--surface-soft)] shadow-[0_1px_2px_rgba(15,15,15,0.04)]"
+                  : "border-[var(--line)] bg-[var(--surface)] hover:bg-[var(--surface-soft)]",
               )}
               key={item.id}
               onClick={() => onChange(item.id)}
@@ -73,20 +73,20 @@ export function TabBar<T extends string>({ items, active, onChange, className }:
                 <span
                   className={cn(
                     "mt-0.5 grid size-9 shrink-0 place-items-center rounded-md",
-                    isActive ? "bg-[var(--primary)] text-white" : "bg-[var(--surface-soft)] text-[var(--primary)]",
+                    isActive ? "bg-[var(--foreground)] text-[var(--surface)]" : "bg-[var(--surface-soft)] text-[var(--foreground)]",
                   )}
                 >
                   {item.icon}
                 </span>
               ) : null}
               <span className="min-w-0 flex-1">
-                <span className={cn("flex items-center gap-2 font-bold", isActive ? "text-[var(--primary-strong)]" : "text-[var(--foreground)]")}>
+                <span className={cn("flex items-center gap-2 font-semibold", isActive ? "text-[var(--foreground)]" : "text-[var(--foreground)]")}>
                   {item.label}
                   {item.badge !== undefined ? (
                     <span
                       className={cn(
                         "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold",
-                        isActive ? "bg-[var(--primary)] text-white" : "bg-[var(--surface-soft)] text-[var(--foreground)]",
+                        isActive ? "bg-[var(--foreground)] text-[var(--surface)]" : "bg-[var(--surface-soft)] text-[var(--foreground)]",
                       )}
                     >
                       {item.badge}

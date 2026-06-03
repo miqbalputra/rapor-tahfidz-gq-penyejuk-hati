@@ -83,6 +83,8 @@ type ComponentRow = {
   code: string;
   name: string;
   max_score: number;
+  input_mode: "direct_score" | "mistake_deduction" | "per_item";
+  deduction_per_mistake: number | null;
   sort_order: number;
 };
 
@@ -203,7 +205,7 @@ export function TahfidzScoringClient() {
       supabase.from("student_halaqohs").select("id,student_id,halaqoh_id,is_active,students(id,full_name,gender)").eq("is_active", true),
       supabase.from("surahs").select("id,juz,sort_order,name_latin,show_in_report").order("juz").order("sort_order"),
       supabase.from("assessment_types").select("id,code,name,max_score,passing_min_score,max_fluency_mistakes,version").in("code", ["tahfidz_juz29", "tahfidz_juz30"]),
-      supabase.from("assessment_components").select("id,assessment_type_id,code,name,max_score,sort_order").order("sort_order"),
+      supabase.from("assessment_components").select("id,assessment_type_id,code,name,max_score,input_mode,deduction_per_mistake,sort_order").order("sort_order"),
       supabase.from("predicate_rules").select("min_score,max_score,label").is("assessment_type_id", null).order("sort_order"),
     ]);
 
@@ -425,6 +427,9 @@ export function TahfidzScoringClient() {
   const fluencyMax = getComponentMax(selectedComponents, "kelancaran", 25);
   const fashohahMax = getComponentMax(selectedComponents, "fashohah", 25);
   const tajwidMax = getComponentMax(selectedComponents, "tajwid", 50);
+  const fluencyComponent = getComponent(selectedComponents, "kelancaran");
+  const fluencyUsesMistakeDeduction = fluencyComponent?.input_mode === "mistake_deduction";
+  const fluencyDeduction = getDeductionPerMistake(fluencyComponent);
 
   const surahById = useMemo(() => new Map(selectedSurahs.map((surah) => [surah.id, surah])), [selectedSurahs]);
 
@@ -470,7 +475,15 @@ export function TahfidzScoringClient() {
         type="number"
         value={draft.fluency_mistakes}
       />,
-      <Input className="min-w-20" disabled={isLocked && !isSupervisor} key={`${surah.id}-fluency`} onChange={(event) => updateDraft(surah.id, "fluency_score", event.target.value)} type="number" value={draft.fluency_score} />,
+      <Input
+        className="min-w-20"
+        disabled={fluencyUsesMistakeDeduction || (isLocked && !isSupervisor)}
+        key={`${surah.id}-fluency`}
+        onChange={(event) => updateDraft(surah.id, "fluency_score", event.target.value)}
+        title={fluencyUsesMistakeDeduction ? `Otomatis: ${fluencyMax} - (salah x ${fluencyDeduction})` : undefined}
+        type="number"
+        value={fluencyUsesMistakeDeduction ? String(totals.fluency) : draft.fluency_score}
+      />,
       <Input className="min-w-20" disabled={isLocked && !isSupervisor} key={`${surah.id}-fashohah`} onChange={(event) => updateDraft(surah.id, "fashohah_score", event.target.value)} type="number" value={draft.fashohah_score} />,
       <Input className="min-w-20" disabled={isLocked && !isSupervisor} key={`${surah.id}-tajwid`} onChange={(event) => updateDraft(surah.id, "tajwid_score", event.target.value)} type="number" value={draft.tajwid_score} />,
       totals.total,
@@ -659,7 +672,9 @@ export function TahfidzScoringClient() {
                     const surah = surahById.get(surahId);
                     if (surah) void setSurahLock(surah, locked);
                   }}
+                  fluencyDeductionPerMistake={fluencyDeduction}
                   tajwidMax={tajwidMax}
+                  fluencyUsesMistakeDeduction={fluencyUsesMistakeDeduction}
                 />
               </div>
 
@@ -710,12 +725,16 @@ function SummaryItem({ label, value }: { label: string; value: string | number }
 }
 
 function calculateTahfidzTotal(draft: ScoreDraft, components: ComponentRow[], assessment: AssessmentTypeRow) {
+  const fluencyComponent = getComponent(components, "kelancaran");
   const fluencyMax = getComponentMax(components, "kelancaran", 25);
   const fashohahMax = getComponentMax(components, "fashohah", 25);
   const tajwidMax = getComponentMax(components, "tajwid", 50);
   const mistakes = toNullableInteger(draft.fluency_mistakes);
   const fluencyInput = toNullableNumber(draft.fluency_score);
-  const fluency = clamp(fluencyInput ?? (mistakes == null ? 0 : fluencyMax - mistakes), 0, fluencyMax);
+  const fluency =
+    fluencyComponent?.input_mode === "mistake_deduction"
+      ? clamp(mistakes == null ? fluencyMax : fluencyMax - mistakes * getDeductionPerMistake(fluencyComponent), 0, fluencyMax)
+      : clamp(fluencyInput ?? 0, 0, fluencyMax);
   const fashohah = clamp(toNullableNumber(draft.fashohah_score) ?? 0, 0, fashohahMax);
   const tajwid = clamp(toNullableNumber(draft.tajwid_score) ?? 0, 0, tajwidMax);
   const total = round(fluency + fashohah + tajwid);
@@ -757,7 +776,15 @@ function buildDrafts(surahs: SurahRow[], scores: ScoreRow[], components: Compone
 }
 
 function getComponentMax(components: ComponentRow[], code: string, fallback: number) {
-  return Number(components.find((component) => component.code === code)?.max_score ?? fallback);
+  return Number(getComponent(components, code)?.max_score ?? fallback);
+}
+
+function getComponent(components: ComponentRow[], code: string) {
+  return components.find((component) => component.code === code);
+}
+
+function getDeductionPerMistake(component: ComponentRow | undefined) {
+  return Number(component?.deduction_per_mistake ?? 1);
 }
 
 function getPredicate(score: number, predicates: PredicateRow[]) {
