@@ -48,8 +48,12 @@ export async function generateSemesterReportPdf(payload: SemesterReportPayload) 
   drawTestedSurah(page, fonts, testedSurahs[0], 617.58, rules.testedPredicates);
   drawTestedSurah(page, fonts, testedSurahs[1], 603.38, rules.testedPredicates);
 
-  buildMaterialRows(payload).forEach((item, index) => {
-    drawMaterialRow(page, fonts, item.label, item.score, 542.28 - index * 14.5, index + 1, rules.materialPredicates);
+  buildMaterialRows(payload).forEach((item) => {
+    if (item.customLabel) {
+      drawMaterialRow(page, fonts, item.label, item.score, item.y, item.order, rules.materialPredicates);
+      return;
+    }
+    drawMaterialScore(page, fonts, item.score, item.y, rules.materialPredicates);
   });
 
   drawText(page, fonts, displayValue(payload.attendance.sick), { x: 53.2, y: 409.25, width: 162.23, align: "center" });
@@ -78,22 +82,26 @@ function drawTestedSurah(page: PDFPage, fonts: { regular: PDFFont; bold: PDFFont
   drawText(page, fonts, predicateLabel(item?.score, rules), { x: 367.45, y, width: 191.43, align: "center" });
 }
 
-function drawMaterialRow(page: PDFPage, fonts: { regular: PDFFont; bold: PDFFont }, label: string, score: string | number | undefined, y: number, order: number, rules: PredicateRule[]) {
-  drawText(page, fonts, String(order), { x: 53.2, y, width: 31.8, align: "center" });
-  drawText(page, fonts, label, { x: 86.8, y });
+function drawMaterialScore(page: PDFPage, fonts: { regular: PDFFont; bold: PDFFont }, score: string | number | undefined, y: number, rules: PredicateRule[]) {
   drawText(page, fonts, displayValue(score), { x: 215.43, y, width: 152.02, align: "center" });
   drawText(page, fonts, predicateLabel(score, rules), { x: 367.45, y, width: 191.43, align: "center" });
 }
 
+function drawMaterialRow(page: PDFPage, fonts: { regular: PDFFont; bold: PDFFont }, label: string, score: string | number | undefined, y: number, order: number, rules: PredicateRule[]) {
+  drawText(page, fonts, String(order), { x: 53.2, y, width: 31.8, align: "center" });
+  drawText(page, fonts, label, { x: 86.8, y });
+  drawMaterialScore(page, fonts, score, y, rules);
+}
+
 function buildMaterialRows(payload: SemesterReportPayload) {
   return [
-    { label: "Praktek Wudhu", score: payload.materialScores.wudhu },
-    { label: "Praktek Sholat", score: payload.materialScores.sholat },
-    { label: "Tayamum", score: payload.materialScores.tayamum },
-    { label: "Shalat Jenazah", score: payload.materialScores.shalatJenazah },
-    { label: "Do'a Harian", score: payload.materialScores.doaHarian },
-    { label: "Hafalan Hadits", score: payload.materialScores.hafalanHadits },
-    ...(payload.includeTajwid ? [{ label: "Tajwid", score: payload.materialScores.tajwid }] : []),
+    { order: 1, label: "Praktek Wudhu", score: payload.materialScores.wudhu, y: 542.28, customLabel: false },
+    { order: 2, label: "Praktek Sholat", score: payload.materialScores.sholat, y: 527.75, customLabel: false },
+    { order: 3, label: "Tayamum", score: payload.materialScores.tayamum, y: 513.25, customLabel: false },
+    { order: 4, label: "Shalat Jenazah", score: payload.materialScores.shalatJenazah, y: 498.75, customLabel: false },
+    { order: 5, label: "Do'a Harian", score: payload.materialScores.doaHarian, y: 484.25, customLabel: false },
+    { order: 6, label: "Hafalan Hadits", score: payload.materialScores.hafalanHadits, y: 470.05, customLabel: false },
+    ...(payload.includeTajwid ? [{ order: 7, label: "Tajwid", score: payload.materialScores.tajwid, y: 455.55, customLabel: true }] : []),
   ];
 }
 
