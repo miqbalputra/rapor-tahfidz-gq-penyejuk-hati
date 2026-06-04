@@ -55,6 +55,9 @@ type SemesterReportRow = {
   target_description: string;
   tested_surahs: unknown;
   show_tajwid: boolean;
+  attendance_sick: number;
+  attendance_permission: number;
+  attendance_absent: number;
   personality_teacher: string;
   personality_friend: string;
   neatness: string;
@@ -64,8 +67,6 @@ type SemesterReportRow = {
   homeroom_teacher_name: string;
   coordinator_name: string;
 };
-type AttendanceRecordRow = { student_id: string; status: "present" | "absent" | "permission" | "sick" };
-type AttendanceSummary = { sick: number; permission: number; absent: number };
 type TestedSurahDraft = { name: string; score: string };
 type NoteMode = "template" | "custom";
 type NoteTemplateRow = { indicator: SemesterReportFormState["description_result"]; description: string };
@@ -78,6 +79,9 @@ type SemesterReportFormState = {
   target_description: string;
   tested_surahs: TestedSurahDraft[];
   show_tajwid: boolean;
+  attendance_sick: string;
+  attendance_permission: string;
+  attendance_absent: string;
   personality_teacher: string;
   personality_friend: string;
   neatness: string;
@@ -121,7 +125,6 @@ export function SemesterReportClient() {
   const [assessmentTypes, setAssessmentTypes] = useState<AssessmentTypeRow[]>([]);
   const [reports, setReports] = useState<SemesterReportRow[]>([]);
   const [examScores, setExamScores] = useState<OtherExamScoreRow[]>([]);
-  const [attendanceByStudent, setAttendanceByStudent] = useState<Record<string, AttendanceSummary>>({});
   const [noteTemplates, setNoteTemplates] = useState<NoteTemplateRow[]>(defaultNoteTemplates);
   const [noteMode, setNoteMode] = useState<NoteMode>("template");
   const [selectedYearId, setSelectedYearId] = useState("");
@@ -129,7 +132,7 @@ export function SemesterReportClient() {
   const [selectedHalaqohId, setSelectedHalaqohId] = useState("");
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [form, setForm] = useState<SemesterReportFormState>(() => emptyForm());
-  const [message, setMessage] = useState("Lengkapi data semester, lalu generate file Excel sesuai template sekolah.");
+  const [message, setMessage] = useState("Lengkapi data semester dan rekap presensi, lalu download rapor sesuai template sekolah.");
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; tone: "success" | "error" | "info" } | null>(null);
 
@@ -264,7 +267,6 @@ export function SemesterReportClient() {
     if (studentIds.length === 0) {
       setReports([]);
       setExamScores([]);
-      setAttendanceByStudent({});
       return;
     }
 
@@ -273,7 +275,7 @@ export function SemesterReportClient() {
     const reportQuery = () =>
       supabase
         .from("semester_report_cards")
-        .select("id,student_id,academic_year_id,semester_id,report_date,jilid,reading_type,target_juz,target_surah,target_description,tested_surahs,show_tajwid,personality_teacher,personality_friend,neatness,discipline,description_result,custom_description,homeroom_teacher_name,coordinator_name")
+        .select("id,student_id,academic_year_id,semester_id,report_date,jilid,reading_type,target_juz,target_surah,target_description,tested_surahs,show_tajwid,attendance_sick,attendance_permission,attendance_absent,personality_teacher,personality_friend,neatness,discipline,description_result,custom_description,homeroom_teacher_name,coordinator_name")
         .eq("academic_year_id", selectedYearId)
         .eq("semester_id", selectedSemesterId)
         .in("student_id", studentIds);
@@ -284,7 +286,7 @@ export function SemesterReportClient() {
         .eq("academic_year_id", selectedYearId)
         .eq("semester_id", selectedSemesterId)
         .in("student_id", studentIds);
-    const [reportRes, examRes, sessionRes] = await Promise.all([
+    const [reportRes, examRes] = await Promise.all([
       reportQuery(),
       assessmentTypeIds.length > 0
         ? supabase
@@ -295,43 +297,29 @@ export function SemesterReportClient() {
             .in("student_id", studentIds)
             .in("assessment_type_id", assessmentTypeIds)
         : Promise.resolve({ data: [], error: null }),
-      supabase.from("attendance_sessions").select("id").eq("halaqoh_id", selectedHalaqohId),
     ]);
     let reportRows = (reportRes.data ?? []) as SemesterReportRow[];
     let reportErrorMessage = reportRes.error?.message ?? null;
-    if (reportRes.error && isMissingColumnError(reportRes.error.message, "show_tajwid")) {
+    if (reportRes.error && isMissingAnyColumnError(reportRes.error.message, ["show_tajwid", "attendance_sick", "attendance_permission", "attendance_absent"])) {
       const fallbackReportRes = await fallbackReportQuery();
-      reportRows = ((fallbackReportRes.data ?? []) as Array<Omit<SemesterReportRow, "show_tajwid">>).map((row) => ({ ...row, show_tajwid: false }));
+      reportRows = ((fallbackReportRes.data ?? []) as Array<Omit<SemesterReportRow, "show_tajwid" | "attendance_sick" | "attendance_permission" | "attendance_absent">>).map((row) => ({
+        ...row,
+        show_tajwid: false,
+        attendance_sick: 0,
+        attendance_permission: 0,
+        attendance_absent: 0,
+      }));
       reportErrorMessage = fallbackReportRes.error?.message ?? null;
     }
 
-    if (reportErrorMessage || examRes.error || sessionRes.error) {
-      notify(reportErrorMessage ?? examRes.error?.message ?? sessionRes.error?.message ?? "Gagal memuat konteks rapor semester.", "error");
+    if (reportErrorMessage || examRes.error) {
+      notify(reportErrorMessage ?? examRes.error?.message ?? "Gagal memuat konteks rapor semester.", "error");
       setLoading(false);
       return;
     }
 
-    let attendanceSummary: Record<string, AttendanceSummary> = {};
-    const sessionIds = ((sessionRes.data ?? []) as { id: string }[]).map((session) => session.id);
-    if (sessionIds.length > 0) {
-      const { data: attendanceRows, error: attendanceError } = await supabase
-        .from("attendance_records")
-        .select("student_id,status")
-        .in("session_id", sessionIds)
-        .in("student_id", studentIds);
-
-      if (attendanceError) {
-        notify(attendanceError.message, "error");
-        setLoading(false);
-        return;
-      }
-
-      attendanceSummary = summarizeAttendance((attendanceRows ?? []) as AttendanceRecordRow[], studentIds);
-    }
-
     setReports(reportRows.map(normalizeSemesterReportRow));
     setExamScores((examRes.data ?? []) as OtherExamScoreRow[]);
-    setAttendanceByStudent(attendanceSummary);
     setLoading(false);
   }, [assignedStudents, assessmentTypes, selectedHalaqohId, selectedSemesterId, selectedYearId]);
 
@@ -401,6 +389,9 @@ export function SemesterReportClient() {
       target_description: form.target_description.trim(),
       tested_surahs: collectTestedSurahs(form),
       show_tajwid: form.show_tajwid,
+      attendance_sick: parseAttendanceCount(form.attendance_sick),
+      attendance_permission: parseAttendanceCount(form.attendance_permission),
+      attendance_absent: parseAttendanceCount(form.attendance_absent),
       personality_teacher: fallbackDash(form.personality_teacher),
       personality_friend: fallbackDash(form.personality_friend),
       neatness: fallbackDash(form.neatness),
@@ -415,25 +406,28 @@ export function SemesterReportClient() {
       onConflict: "student_id,academic_year_id,semester_id",
     });
     let saveErrorMessage = error?.message ?? null;
-    let savedTajwidPreference = true;
-    if (error && isMissingColumnError(error.message, "show_tajwid")) {
+    let savedAllDraftFields = true;
+    if (error && isMissingAnyColumnError(error.message, ["show_tajwid", "attendance_sick", "attendance_permission", "attendance_absent"])) {
       const payloadWithoutTajwid: Partial<typeof payload> = { ...payload };
       delete payloadWithoutTajwid.show_tajwid;
+      delete payloadWithoutTajwid.attendance_sick;
+      delete payloadWithoutTajwid.attendance_permission;
+      delete payloadWithoutTajwid.attendance_absent;
       const fallbackSave = await supabase.from("semester_report_cards").upsert(payloadWithoutTajwid, {
         onConflict: "student_id,academic_year_id,semester_id",
       });
       saveErrorMessage = fallbackSave.error?.message ?? null;
-      savedTajwidPreference = false;
+      savedAllDraftFields = false;
     }
 
     if (saveErrorMessage) {
       notify(saveErrorMessage, "error");
     } else {
       notify(
-        savedTajwidPreference
+        savedAllDraftFields
           ? `Draft rapor semester ${selectedStudent?.full_name ?? "santri"} berhasil disimpan.`
-          : `Draft rapor semester ${selectedStudent?.full_name ?? "santri"} tersimpan. Terapkan migration 0009 agar pilihan Tajwid ikut tersimpan.`,
-        savedTajwidPreference ? "success" : "info",
+          : `Draft rapor semester ${selectedStudent?.full_name ?? "santri"} tersimpan. Terapkan migration terbaru agar opsi Tajwid dan rekap presensi ikut tersimpan.`,
+        savedAllDraftFields ? "success" : "info",
       );
       await loadContextData();
     }
@@ -532,9 +526,9 @@ export function SemesterReportClient() {
       },
       includeTajwid: effectiveForm.show_tajwid && hasFilledScore(tajwidScore),
       attendance: {
-        sick: attendanceByStudent[student.id]?.sick ?? 0,
-        permission: attendanceByStudent[student.id]?.permission ?? 0,
-        absent: attendanceByStudent[student.id]?.absent ?? 0,
+        sick: parseAttendanceCount(effectiveForm.attendance_sick),
+        permission: parseAttendanceCount(effectiveForm.attendance_permission),
+        absent: parseAttendanceCount(effectiveForm.attendance_absent),
       },
       personality: {
         teacher: fallbackDash(effectiveForm.personality_teacher),
@@ -597,14 +591,20 @@ export function SemesterReportClient() {
 
   const summaryRows = assignedStudents.map((student, index) => {
     const report = reportByStudent.get(student.id);
-    const attendance = attendanceByStudent[student.id] ?? { sick: 0, permission: 0, absent: 0 };
+    const attendanceForm =
+      student.id === selectedStudentId
+        ? form
+        : buildFormState({
+            report: report ?? null,
+            schoolSettings,
+          });
     const completeness = studentCompletenessMap.get(student.id) ?? emptyCompleteness();
 
     return [
       index + 1,
       student.full_name,
       String(getExamValue(student.id, "tartili")),
-      `${attendance.sick}/${attendance.permission}/${attendance.absent}`,
+      `${parseAttendanceCount(attendanceForm.attendance_sick)}/${parseAttendanceCount(attendanceForm.attendance_permission)}/${parseAttendanceCount(attendanceForm.attendance_absent)}`,
       <Badge key={`${student.id}-draft`} tone={report ? "green" : "neutral"}>
         {report ? "Tersimpan" : "Belum"}
       </Badge>,
@@ -713,12 +713,12 @@ export function SemesterReportClient() {
           {selectedStudent ? (
             selectedCompleteness.ready ? (
               <HelpText icon={<CheckCircle2 size={18} />} tone="success" title="Mode uji 1 santri siap">
-                Data inti untuk <strong>{selectedStudent.full_name}</strong> sudah lengkap. Aman untuk uji simpan draft lalu download Excel.
+                Data inti untuk <strong>{selectedStudent.full_name}</strong> sudah lengkap. Aman untuk simpan draft lalu download rapor.
               </HelpText>
             ) : (
               <HelpText icon={<AlertTriangle size={18} />} tone="warning" title="Mode uji 1 santri belum lengkap">
                 <div className="space-y-2">
-                  <p>Masih ada data inti yang perlu dilengkapi sebelum file Excel dibuat.</p>
+                  <p>Masih ada data inti yang perlu dilengkapi sebelum rapor dibuat.</p>
                   <ul className="list-disc pl-5">
                     {selectedCompleteness.blockingIssues.map((issue) => (
                       <li key={issue}>{issue}</li>
@@ -739,7 +739,7 @@ export function SemesterReportClient() {
                   label="Presensi S/I/A"
                   value={
                     selectedStudent
-                      ? `${attendanceByStudent[selectedStudent.id]?.sick ?? 0}/${attendanceByStudent[selectedStudent.id]?.permission ?? 0}/${attendanceByStudent[selectedStudent.id]?.absent ?? 0}`
+                      ? `${parseAttendanceCount(form.attendance_sick)}/${parseAttendanceCount(form.attendance_permission)}/${parseAttendanceCount(form.attendance_absent)}`
                       : "-"
                   }
                 />
@@ -767,6 +767,24 @@ export function SemesterReportClient() {
                 <Field label="Keterangan Target">
                   <Input onChange={(event) => updateForm("target_description", event.target.value)} value={form.target_description} />
                 </Field>
+              </div>
+
+              <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-soft)] p-4">
+                <div className="mb-3">
+                  <h3 className="text-sm font-bold text-[var(--foreground)]">Rekap Presensi Semester</h3>
+                  <p className="mt-1 text-sm text-[var(--muted)]">Isi satu kali dari rekap kertas sebelum cetak rapor. Nilai ini yang dipakai di kolom D. Presensi.</p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Field label="Sakit">
+                    <Input min={0} onChange={(event) => updateForm("attendance_sick", event.target.value)} type="number" value={form.attendance_sick} />
+                  </Field>
+                  <Field label="Izin">
+                    <Input min={0} onChange={(event) => updateForm("attendance_permission", event.target.value)} type="number" value={form.attendance_permission} />
+                  </Field>
+                  <Field label="Tanpa Keterangan">
+                    <Input min={0} onChange={(event) => updateForm("attendance_absent", event.target.value)} type="number" value={form.attendance_absent} />
+                  </Field>
+                </div>
               </div>
 
               <label className="flex items-start gap-3 rounded-lg border border-[var(--line)] bg-[var(--surface-soft)] p-4">
@@ -901,7 +919,7 @@ export function SemesterReportClient() {
           </div>
 
           <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-soft)] p-4 text-sm leading-6 text-[var(--muted)]">
-            Data semester di sini bersifat tambahan dan tidak mengubah struktur data rapor tahfidz yang sudah live. Nilai ujian tambahan dan presensi tetap dibaca dari tabel yang sudah ada, lalu digabung dengan draft semester untuk menghasilkan file Excel.
+            Data semester di sini bersifat tambahan dan tidak mengubah struktur data rapor tahfidz yang sudah live. Nilai ujian tambahan tetap dibaca dari tabel nilai, sedangkan presensi diisi sebagai rekap akhir semester dari catatan manual sekolah.
           </div>
 
           <DataTable columns={["No", "Santri", "Tartili", "S/I/A", "Draft", "Kesiapan", "Aksi"]} entityLabel="santri" pageSize={10} rows={summaryRows} />
@@ -974,6 +992,9 @@ function emptyForm(): SemesterReportFormState {
     target_description: "",
     tested_surahs: [],
     show_tajwid: false,
+    attendance_sick: "0",
+    attendance_permission: "0",
+    attendance_absent: "0",
     personality_teacher: "-",
     personality_friend: "-",
     neatness: "-",
@@ -1006,6 +1027,9 @@ function buildFormState({
     target_description: report?.target_description ?? "",
     tested_surahs: testedSurahs.slice(0, 2),
     show_tajwid: report?.show_tajwid ?? false,
+    attendance_sick: String(report?.attendance_sick ?? 0),
+    attendance_permission: String(report?.attendance_permission ?? 0),
+    attendance_absent: String(report?.attendance_absent ?? 0),
     personality_teacher: report?.personality_teacher ?? "-",
     personality_friend: report?.personality_friend ?? "-",
     neatness: report?.neatness ?? "-",
@@ -1025,6 +1049,9 @@ function normalizeSemesterReportRow(row: SemesterReportRow): SemesterReportRow {
   return {
     ...row,
     tested_surahs: normalizeTestedSurahs(row.tested_surahs),
+    attendance_sick: Number(row.attendance_sick ?? 0),
+    attendance_permission: Number(row.attendance_permission ?? 0),
+    attendance_absent: Number(row.attendance_absent ?? 0),
   };
 }
 
@@ -1044,17 +1071,6 @@ function normalizeTestedSurahs(value: unknown): TestedSurahDraft[] {
 
 function isKnownDescriptionResult(value: unknown): value is SemesterReportFormState["description_result"] {
   return value === "Tidak Tercapai" || value === "Tercapai" || value === "Melampaui";
-}
-
-function summarizeAttendance(rows: AttendanceRecordRow[], studentIds: string[]) {
-  const summary = Object.fromEntries(studentIds.map((studentId) => [studentId, { sick: 0, permission: 0, absent: 0 }])) as Record<string, AttendanceSummary>;
-  for (const row of rows) {
-    if (!summary[row.student_id]) continue;
-    if (row.status === "sick") summary[row.student_id].sick += 1;
-    if (row.status === "permission") summary[row.student_id].permission += 1;
-    if (row.status === "absent") summary[row.student_id].absent += 1;
-  }
-  return summary;
 }
 
 function normalizeHalaqohRow(row: HalaqohQueryRow): HalaqohRow {
@@ -1085,6 +1101,16 @@ function fallbackDash(value: string) {
 function hasFilledScore(value: string | number | null | undefined) {
   const text = String(value ?? "").trim();
   return text !== "" && text !== "-";
+}
+
+function parseAttendanceCount(value: string | number | null | undefined) {
+  const parsed = Number(value ?? 0);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return Math.floor(parsed);
+}
+
+function isMissingAnyColumnError(message: string, columns: string[]) {
+  return columns.some((column) => isMissingColumnError(message, column));
 }
 
 function isMissingColumnError(message: string, column: string) {
