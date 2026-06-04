@@ -29,7 +29,6 @@ import { DataTable } from "@/components/ui/table";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useSchoolSettings } from "@/lib/settings/use-school-settings";
 import { cn } from "@/lib/utils/cn";
-import { OnboardingWizard } from "./onboarding-wizard";
 
 type UserProfileRow = { role: string; teacher_id: string | null; is_active: boolean; full_name: string };
 type HalaqohRow = {
@@ -217,15 +216,13 @@ export function DashboardClient() {
         </div>
       </Card>
 
-      <OnboardingWizard role={isAdmin ? "admin" : isKoordinator ? "koordinator" : isGuru ? "guru" : "viewer"} />
-
       {initialLoad ? (
         <SkeletonMetricGrid count={4} />
       ) : (
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard help={isGuru ? "Halaqoh yang diampu" : "Halaqoh aktif"} icon={<UsersRound size={22} />} label="Halaqoh" value={halaqohs.length} />
           <MetricCard help="Santri aktif dalam halaqoh" icon={<UsersRound size={22} />} label="Santri" value={activeStudentIds.size} />
-          <MetricCard help={`${todayPresentCount} hadir, ${todayNotPresentCount} sakit/izin/alfa`} icon={<CalendarCheck size={22} />} label="Presensi Hari Ini" value={attendanceRecords.length} />
+          <MetricCard help={`${todayPresentCount} hadir, ${todayNotPresentCount} sakit/izin/alfa jika fitur harian dipakai`} icon={<CalendarCheck size={22} />} label="Presensi Harian Opsional" value={attendanceRecords.length} />
           <MetricCard
             help={`${reportsValidated} tervalidasi · ${reportsWaiting} menunggu · ${reportsDraft} draft`}
             icon={<FileText size={22} />}
@@ -239,7 +236,7 @@ export function DashboardClient() {
         <Card>
           <SectionHeader title="Aksi Cepat" description="Menu yang paling sering dibuka." />
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            <QuickLink href="/presensi" icon={<CalendarCheck size={19} />} label="Input Presensi" desc="Catat kehadiran santri pada pertemuan hari ini." />
+            <QuickLink href="/presensi" icon={<CalendarCheck size={19} />} label="Presensi Opsional" desc="Catatan per pertemuan jika diperlukan; Rapor Semester memakai rekap manual di menu Rapor." />
             <QuickLink href="/penilaian" icon={<ClipboardList size={19} />} label="Input Nilai" desc="Nilai setoran surat, juziyah, dan ujian lainnya." />
             <QuickLink href="/rapor" icon={<FileText size={19} />} label="Rapor" desc="Cek kelengkapan, cetak satuan, atau cetak massal." />
             {isAdmin ? <QuickLink href="/akun-guru" icon={<UserCog size={19} />} label="Akun Guru" desc="Buat dan kelola akun login untuk guru." /> : null}
@@ -266,7 +263,7 @@ export function DashboardClient() {
       <PanduanTeknis role={isAdmin ? "admin" : isKoordinator ? "koordinator" : isGuru ? "guru" : "viewer"} />
 
       <Card>
-        <SectionHeader title="Presensi Halaqoh Hari Ini" description="Daftar halaqoh dan status sesi presensi tanggal hari ini." />
+        <SectionHeader title="Presensi Harian Opsional" description="Daftar halaqoh dan status sesi presensi hari ini jika fitur harian masih dipakai." />
         <DataTable columns={["No", "Halaqoh", "Pengampu", "Santri Aktif", "Presensi"]} rows={halaqohRows} />
       </Card>
 
@@ -343,15 +340,15 @@ function PanduanTeknis({ role }: { role: "admin" | "koordinator" | "guru" | "vie
   const groups: StepGroup[] = [
     {
       id: "alur-utama",
-      title: "Alur Utama: Master Data → Input Nilai → Cetak Rapor",
+      title: "Alur Utama: Master Data → Input Nilai → Rekap Semester → Cetak Rapor",
       icon: <ListChecks size={20} />,
       description: "Urutan ringkas paling penting yang harus dipahami semua pengguna.",
       visibleFor: ["admin", "koordinator", "guru", "viewer"],
       steps: [
         { title: "Admin menyiapkan data dasar", detail: "Buka Master Data, pastikan guru, santri, kelas, halaqoh, dan anggota halaqoh sudah benar.", href: "/master", hrefLabel: "Buka Master Data" },
         { title: "Admin membuat akun guru", detail: "Buka Akun Guru, klik Tambah, pilih guru, isi email dan password minimal 8 karakter, klik Simpan.", href: "/akun-guru", hrefLabel: "Buka Akun Guru" },
-        { title: "Guru login dan input presensi", detail: "Guru login dengan email/password yang dibuat admin, masuk Presensi, pilih halaqoh dan tanggal, isi status hadir/sakit/izin/alfa, klik Simpan Presensi.", href: "/presensi", hrefLabel: "Buka Presensi" },
         { title: "Guru input nilai", detail: "Buka Penilaian, isi nilai setoran tiap surat (kolom kelancaran, fashohah, tajwid), simpan; lalu isi nilai juziyah; isi ujian lainnya jika ada.", href: "/penilaian", hrefLabel: "Buka Penilaian" },
+        { title: "Guru isi rekap presensi semester", detail: "Menjelang cetak rapor semester, buka Rapor, pilih Rapor Semester, lalu isi rekap Sakit/Izin/Tanpa Keterangan dari catatan kertas sekolah.", href: "/rapor", hrefLabel: "Buka Rapor" },
         { title: "Cek kelengkapan rapor", detail: "Buka Rapor, pilih tahun ajaran, semester, halaqoh, santri, dan Juz 29 atau Juz 30. Lihat tabel Kelengkapan Rapor Halaqoh untuk memastikan semua santri siap.", href: "/rapor", hrefLabel: "Buka Rapor" },
         { title: "Cetak rapor sebagai Word", detail: "Pada halaman Rapor, klik Simpan Draft, lalu klik Cetak Word (Santri Ini) untuk file DOCX satu santri, atau Cetak Word Halaqoh untuk semua santri dalam ZIP. Word adalah format utama yang sesuai template asli sekolah.", href: "/rapor", hrefLabel: "Buka Rapor" },
       ],
@@ -372,16 +369,16 @@ function PanduanTeknis({ role }: { role: "admin" | "koordinator" | "guru" | "vie
     },
     {
       id: "guru-harian",
-      title: "Cara Pakai Harian untuk Guru",
+      title: "Cara Pakai Guru",
       icon: <ClipboardList size={20} />,
-      description: "Yang biasa dilakukan guru setiap pertemuan dan menjelang akhir semester.",
+      description: "Yang biasa dilakukan guru saat input nilai dan menjelang akhir semester.",
       visibleFor: ["admin", "guru"],
       steps: [
         { title: "Login ke aplikasi", detail: "Buka aplikasi, klik Login, masukkan email dan password yang diberikan admin." },
-        { title: "Isi presensi tiap pertemuan", detail: "Buka menu Presensi. Pilih halaqoh, pilih tanggal, isi materi (opsional). Untuk tiap santri, pilih Hadir/Sakit/Izin/Alfa, tambahkan catatan jika perlu, klik Simpan Presensi.", href: "/presensi", hrefLabel: "Buka Presensi" },
         { title: "Input nilai setoran tahfidz", detail: "Buka Penilaian. Pilih tahun ajaran, semester, halaqoh, santri, dan Juz 29 atau Juz 30. Untuk tiap surat, isi jumlah salah kelancaran (sistem otomatis hitung nilai kelancaran), nilai fashohah, dan tajwid. Klik Simpan tiap baris atau Simpan Semua.", href: "/penilaian", hrefLabel: "Buka Penilaian" },
         { title: "Input nilai juziyah", detail: "Pada halaman Penilaian, scroll ke bagian Nilai Juziyah. Isi kelancaran, fashohah, tajwid (rata-rata dan predikat dihitung otomatis). Klik Simpan Juziyah.", href: "/penilaian", hrefLabel: "Buka Penilaian" },
-        { title: "Cek kelengkapan menjelang rapor", detail: "Buka Rapor. Tabel Kelengkapan Rapor Halaqoh menunjukkan santri yang setoran, juziyah, atau drafnya belum lengkap. Lengkapi dulu sebelum cetak.", href: "/rapor", hrefLabel: "Buka Rapor" },
+        { title: "Isi rekap presensi semester", detail: "Buka Rapor Semester, pilih santri, lalu isi Sakit/Izin/Tanpa Keterangan satu kali dari rekap kertas sebelum cetak.", href: "/rapor", hrefLabel: "Buka Rapor" },
+        { title: "Cek kelengkapan menjelang rapor", detail: "Buka Rapor. Tabel Kelengkapan Rapor Halaqoh menunjukkan santri yang setoran, juziyah, draf, atau rekap semesternya belum lengkap. Lengkapi dulu sebelum cetak.", href: "/rapor", hrefLabel: "Buka Rapor" },
         { title: "Cetak rapor", detail: "Pada halaman Rapor, klik Simpan Draft, lalu klik Cetak Word (Santri Ini) untuk satu santri, atau Cetak Word Halaqoh untuk seluruh halaqoh dalam satu ZIP. File DOCX otomatis terdownload dan bisa langsung dibuka di Microsoft Word.", href: "/rapor", hrefLabel: "Buka Rapor" },
       ],
     },
@@ -401,14 +398,14 @@ function PanduanTeknis({ role }: { role: "admin" | "koordinator" | "guru" | "vie
     },
     {
       id: "kunci-nilai",
-      title: "Mengunci Nilai dan Presensi",
+      title: "Mengunci Nilai dan Presensi Harian Opsional",
       icon: <Lock size={20} />,
-      description: "Saat data sudah final, kunci agar tidak diubah tanpa sengaja.",
+      description: "Saat data nilai atau sesi presensi opsional sudah final, kunci agar tidak diubah tanpa sengaja.",
       visibleFor: ["admin", "koordinator"],
       steps: [
         { title: "Kunci nilai surat tertentu", detail: "Pada halaman Penilaian Tahfidz, tiap baris surat punya tombol Kunci di kolom Aksi (hanya untuk admin/koordinator). Klik untuk mengunci nilai surat itu agar guru tidak bisa mengubahnya lagi." },
         { title: "Kunci nilai juziyah", detail: "Pada bagian Nilai Juziyah, klik tombol Kunci. Setelah dikunci, hanya admin/koordinator yang dapat mengubah." },
-        { title: "Kunci sesi presensi", detail: "Pada halaman Presensi, setelah memilih halaqoh dan tanggal, klik tombol Kunci Sesi (hanya admin/koordinator). Ini mencegah guru mengubah presensi yang sudah final." },
+        { title: "Kunci sesi presensi harian jika dipakai", detail: "Pada halaman Presensi, setelah memilih halaqoh dan tanggal, klik tombol Kunci Sesi (hanya admin/koordinator). Ini hanya untuk fitur presensi per pertemuan; Rapor Semester memakai rekap manual di menu Rapor." },
         { title: "Buka kunci jika perlu koreksi", detail: "Klik tombol Buka Kunci. Setelah dibuka, guru bisa mengedit lagi. Jangan lupa kunci kembali setelah koreksi selesai." },
       ],
     },

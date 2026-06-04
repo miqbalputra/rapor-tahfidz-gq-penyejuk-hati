@@ -158,14 +158,14 @@ function Ringkasan() {
       <SectionTitle index={1} title="Ringkasan Aplikasi" icon={<BookOpen size={20} />} />
       <Card>
         <p className="leading-7 text-[var(--foreground)]">
-          Aplikasi ini dipakai untuk mengelola data santri, presensi, nilai tahfidz, dan cetak rapor Juz 29 / Juz 30 secara digital.
+          Aplikasi ini dipakai untuk mengelola data santri, nilai tahfidz, rekap presensi semester, dan cetak rapor Juz 29 / Juz 30 secara digital.
           Tujuannya menggantikan input manual di Word dan Excel agar lebih cepat, tidak salah hitung, dan rapi.
         </p>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           <RoleCard icon={<UserCog size={20} />} label="Admin" desc="Kelola guru, santri, halaqoh, akun guru, tahun ajaran, rubrik, dan profil lembaga." />
           <RoleCard icon={<UsersRound size={20} />} label="Koordinator" desc="Memvalidasi rapor, mengunci nilai, melihat semua halaqoh, audit log." />
-          <RoleCard icon={<ClipboardList size={20} />} label="Guru" desc="Input presensi, nilai setoran, juziyah, ujian lainnya pada halaqoh yang diampu." />
+          <RoleCard icon={<ClipboardList size={20} />} label="Guru" desc="Input nilai setoran, juziyah, ujian lainnya, dan rekap presensi semester pada halaqoh yang diampu." />
         </div>
 
         <div className="mt-5 rounded-md border border-[var(--line)] bg-[var(--surface-soft)] p-4">
@@ -173,14 +173,14 @@ function Ringkasan() {
           <ul className="mt-2 space-y-1.5 text-sm leading-6 text-[var(--muted)]">
             <li>• <strong className="text-[var(--foreground)]">File Word (.docx)</strong> rapor santri yang sesuai template sekolah, siap dicetak atau diedit.</li>
             <li>• <strong className="text-[var(--foreground)]">File ZIP</strong> berisi semua rapor santri satu halaqoh sekaligus.</li>
-            <li>• <strong className="text-[var(--foreground)]">Rekap presensi bulanan</strong> dengan persentase kehadiran tiap santri, bisa diexport CSV.</li>
+            <li>• <strong className="text-[var(--foreground)]">Rekap presensi semester</strong> yang diisi satu kali dari catatan manual sekolah sebelum rapor dicetak.</li>
             <li>• <strong className="text-[var(--foreground)]">Preview rapor live</strong> di browser yang persis sama dengan file Word yang akan didownload.</li>
             <li>• <strong className="text-[var(--foreground)]">Audit log otomatis</strong> mencatat semua perubahan nilai, presensi, dan rapor untuk transparansi.</li>
           </ul>
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <FeatureBox icon={<Sparkles size={18} />} title="Onboarding Wizard" desc="Saat admin pertama kali login, dashboard menampilkan checklist 6 langkah setup yang otomatis tertanda selesai saat data terisi." />
+          <FeatureBox icon={<Sparkles size={18} />} title="Panduan Setup" desc="Halaman Panduan menyediakan urutan setup awal untuk admin tanpa memenuhi tampilan Dashboard." />
           <FeatureBox icon={<Moon size={18} />} title="Mode Gelap" desc="Toggle ikon bulan/matahari di kanan atas. Disimpan otomatis per browser." />
         </div>
       </Card>
@@ -196,7 +196,7 @@ function AlurUtama() {
     { icon: <Building2 size={22} />, label: "Setup Profil & Master Data", actor: "Admin", desc: "Lengkapi profil lembaga, tahun ajaran, guru, halaqoh, santri, dan tempatkan santri ke halaqoh." },
     { icon: <UserCog size={22} />, label: "Buat Akun Guru", actor: "Admin", desc: "Buat email & password login untuk tiap guru." },
     { icon: <LogIn size={22} />, label: "Guru Login", actor: "Guru", desc: "Guru login lalu otomatis hanya melihat halaqoh yang diampunya." },
-    { icon: <CalendarCheck size={22} />, label: "Input Presensi", actor: "Guru", desc: "Pilih halaqoh, tanggal, isi status hadir/sakit/izin/alfa tiap santri." },
+    { icon: <CalendarCheck size={22} />, label: "Rekap Presensi Semester", actor: "Guru", desc: "Di Rapor Semester, isi total Sakit/Izin/Tanpa Keterangan dari catatan kertas sekolah." },
     { icon: <ClipboardList size={22} />, label: "Input Nilai", actor: "Guru", desc: "Isi nilai setoran tiap surat, lalu nilai juziyah, dan ujian lainnya bila perlu." },
     { icon: <FileSignature size={22} />, label: "Validasi Rapor", actor: "Koordinator", desc: "Periksa kelengkapan, ajukan validasi, lalu validasi rapor." },
     { icon: <FileText size={22} />, label: "Cetak Word", actor: "Admin/Koord.", desc: "Klik Cetak Word (Santri Ini) atau Cetak Word Halaqoh (ZIP)." },
@@ -275,7 +275,7 @@ function SetupAdmin() {
 
       <Card>
         <p className="mb-4 text-sm leading-6 text-[var(--muted)]">
-          Lakukan urutan ini sekali saat pertama kali memakai aplikasi. Wizard di Dashboard akan menunjukkan progress otomatis.
+          Lakukan urutan ini sekali saat pertama kali memakai aplikasi. Gunakan checklist panduan ini sebagai acuan setup awal.
         </p>
 
         <ol className="space-y-3">
@@ -316,14 +316,14 @@ function HarianGuru() {
             <span className="grid size-9 place-items-center rounded-md bg-[var(--primary)] text-white">
               <CalendarCheck size={18} />
             </span>
-            <h3 className="font-bold">Saat tiap pertemuan halaqoh</h3>
+            <h3 className="font-bold">Menjelang cetak rapor semester</h3>
           </div>
           <ol className="space-y-2 text-sm leading-6 text-[var(--muted)]">
-            <li><strong className="text-[var(--foreground)]">1.</strong> Buka menu Presensi.</li>
-            <li><strong className="text-[var(--foreground)]">2.</strong> Pilih halaqoh dan tanggal hari ini.</li>
-            <li><strong className="text-[var(--foreground)]">3.</strong> Untuk tiap santri, pilih status: Hadir / Sakit / Izin / Alfa.</li>
-            <li><strong className="text-[var(--foreground)]">4.</strong> Tambahkan catatan jika perlu.</li>
-            <li><strong className="text-[var(--foreground)]">5.</strong> Klik Simpan Presensi.</li>
+            <li><strong className="text-[var(--foreground)]">1.</strong> Siapkan rekap kertas presensi semester dari sekolah.</li>
+            <li><strong className="text-[var(--foreground)]">2.</strong> Buka menu Rapor → Rapor Semester.</li>
+            <li><strong className="text-[var(--foreground)]">3.</strong> Pilih tahun ajaran, semester, halaqoh, dan santri.</li>
+            <li><strong className="text-[var(--foreground)]">4.</strong> Isi total Sakit, Izin, dan Tanpa Keterangan satu kali.</li>
+            <li><strong className="text-[var(--foreground)]">5.</strong> Klik Simpan Draft sebelum download PDF atau Excel.</li>
           </ol>
         </Card>
 
@@ -531,11 +531,11 @@ function FiturRapor() {
 function KunciValidasi() {
   return (
     <section className="scroll-mt-24" id="kunci-validasi">
-      <SectionTitle index={7} title="Mengunci Nilai dan Presensi" icon={<Lock size={20} />} />
+      <SectionTitle index={7} title="Mengunci Nilai dan Presensi Harian Opsional" icon={<Lock size={20} />} />
 
       <Card>
         <p className="mb-4 text-sm leading-6 text-[var(--muted)]">
-          Saat data sudah final, admin atau koordinator dapat mengunci agar tidak terubah tanpa sengaja oleh guru.
+          Saat data nilai atau sesi presensi opsional sudah final, admin atau koordinator dapat mengunci agar tidak terubah tanpa sengaja oleh guru.
         </p>
 
         <div className="grid gap-3 sm:grid-cols-3">
@@ -550,8 +550,8 @@ function KunciValidasi() {
             who="Admin / Koordinator"
           />
           <LockBox
-            title="Sesi Presensi"
-            place="Presensi → tombol Kunci Sesi setelah pilih halaqoh"
+            title="Sesi Presensi Harian"
+            place="Presensi → tombol Kunci Sesi setelah pilih halaqoh jika fitur harian dipakai"
             who="Admin / Koordinator"
           />
         </div>
@@ -559,7 +559,7 @@ function KunciValidasi() {
         <div className="mt-5 rounded-md border-l-4 border-amber-500 bg-amber-50 p-4 text-sm leading-6 text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">
           <p className="font-bold">Penting:</p>
           <p className="mt-1">
-            Setelah dikunci, guru tidak bisa lagi mengubah data tersebut. Jika perlu koreksi, admin/koordinator harus membuka kunci dulu lewat tombol Buka Kunci. Semua aktivitas kunci/buka kunci tercatat di Audit Log.
+            Setelah dikunci, guru tidak bisa lagi mengubah data tersebut. Untuk Rapor Semester, presensi utama tetap diisi sebagai rekap manual di menu Rapor. Jika perlu koreksi data terkunci, admin/koordinator harus membuka kunci dulu lewat tombol Buka Kunci. Semua aktivitas kunci/buka kunci tercatat di Audit Log.
           </p>
         </div>
       </Card>
@@ -679,13 +679,13 @@ function FiturTambahan() {
             <span className="grid size-9 place-items-center rounded-md bg-[var(--primary)] text-white">
               <CalendarCheck size={18} />
             </span>
-            <h3 className="font-bold">Rekap Presensi Bulanan</h3>
+            <h3 className="font-bold">Rekap Presensi Harian Opsional</h3>
           </div>
           <p className="text-sm leading-6 text-[var(--muted)]">
-            Halaman Presensi → scroll ke bawah ke section Rekap. Filter bulan + halaqoh, lihat persentase kehadiran tiap santri.
+            Halaman Presensi → scroll ke bawah ke section Rekap. Fitur ini opsional untuk sekolah yang tetap ingin mencatat per pertemuan; cetak Rapor Semester memakai rekap manual di menu Rapor.
           </p>
           <p className="mt-2 text-xs text-[var(--muted)]">
-            Tombol <strong className="text-[var(--foreground)]">Export CSV</strong> menghasilkan file siap buka di Excel.
+            Tombol <strong className="text-[var(--foreground)]">Export CSV</strong> menghasilkan file siap buka di Excel jika rekap harian tetap digunakan.
           </p>
         </Card>
       </div>
@@ -727,8 +727,8 @@ function Tips() {
       desc: "Pengaturan → Audit Log. Admin bisa lihat siapa, kapan, dan apa yang berubah pada nilai/presensi/rapor.",
     },
     {
-      title: "Onboarding wizard guides setup",
-      desc: "Saat admin pertama login, dashboard menampilkan wizard 6 langkah dengan progress otomatis. Ikuti urutannya untuk hasil paling cepat.",
+      title: "Panduan setup awal tersedia",
+      desc: "Gunakan halaman Panduan untuk mengikuti urutan setup awal tanpa memenuhi tampilan Dashboard.",
     },
   ];
 
